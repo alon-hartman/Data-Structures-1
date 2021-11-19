@@ -5,25 +5,41 @@
 #include <memory>
 #include <exception>
 
+/** 
+ * NOTE: this is non-const BST, meaning key and info are not saved as const.
+ * this is because when deleting a node we overwrite their values.
+ * if this is important this should be dealt with (for example, using std::swap)
+*/
+
 template<class Key, class Info>
 class BST {
     protected:
         struct Node {
             Key key;
             Info info;
+            int height = 0;
             std::shared_ptr<Node> left;
             std::shared_ptr<Node> right;
-            Node(const Key& key, const Info& info, std::shared_ptr<Node> left=nullptr, std::shared_ptr<Node> right=nullptr) : 
-                key(key), info(info), left(left), right(right) { }
+            Node(const Key& key, const Info& info, const int height=0,
+                std::shared_ptr<Node> left=nullptr, std::shared_ptr<Node> right=nullptr)
+                    : key(key), info(info), height(height), left(left), right(right) { }
             Node(const Node* other) {
                 key = other->key;
                 info = other->info;
+                height = other->height;
                 left = other->left;
                 right = other->right;
             }
         };
         std::shared_ptr<Node> root = nullptr;
 
+
+        static int height_aux(std::shared_ptr<Node>& root) {
+            if(!root) {
+                return 0;
+            }
+            return root->height;
+        }
 
         static std::shared_ptr<Node> find_aux(std::shared_ptr<Node> root, const Key key) {
             if(!root || root->key == key) {
@@ -44,16 +60,17 @@ class BST {
             }
             if(key < root->key) {
                 insert_aux(root->left, key, info);
-                return;
             }
             else if(key > root->key) {
                 insert_aux(root->right, key, info);
-                return;
             }
-            else {  // key == root->key
+            else {  // key == root->key, should never happen if called from find()
                 throw std::invalid_argument("key already exists.");
-                return;
             }
+            // int left_height = root->left ? root->left->height : 0;
+            // int right_height = root->right ? root->right->height : 0;
+            root->height = 1 + std::max(height_aux(root->left), height_aux(root->right));
+            return;
         }
 
         static void remove_aux(std::shared_ptr<Node>& root, const Key key) {
@@ -62,9 +79,11 @@ class BST {
             }
             if(key < root->key) {
                 remove_aux(root->left, key);
+                root->height--;
             }
             else if(key > root->key) {
                 remove_aux(root->right, key);
+                root->height--;
             }
             else {  // key == root->key
                 // root has no leafs
@@ -87,9 +106,11 @@ class BST {
                     while(next->left) {
                         next = next->left;
                     }
-                    root->key = next->key;
-                    root->info = next->info;
-                    remove_aux(root->right, next->key);
+                    Key key = next->key;
+                    Info info = next->info;
+                    remove_aux(root, next->key);
+                    root->key = key;
+                    root->info = info;
                 }
             }
             return;
@@ -163,7 +184,9 @@ class BST {
             return find_aux(root, key);
         }
         void insert(const Key key, const Info info) {
-            insert_aux(root, key, info);
+            if(!find(key)) {
+                insert_aux(root, key, info);
+            }
         }
         void remove(Key key) {
             remove_aux(root, key);
@@ -180,6 +203,14 @@ class BST {
         void print_postorder(std::ostream& os = std::cout) {
             traverse_postorder(root, os);
             os << std::endl;
+        }
+        
+        int height(Key key) {
+            std::shared_ptr<Node> node = find(key);
+            if(node) {
+                return height_aux(node);
+            }
+            return -1;
         }
 };
 
