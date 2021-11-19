@@ -39,7 +39,7 @@ class BST {
 
         static void insert_aux(std::shared_ptr<Node>& root, const Key key, const Info info) {
             if(!root) {
-                root = std::make_shared<Node>(new Node(key, info));
+                root = std::make_shared<Node>(key, info);
                 return;
             }
             if(key < root->key) {
@@ -69,17 +69,17 @@ class BST {
             else {  // key == root->key
                 // root has no leafs
                 if(!root->left && !root->right) {
-                    root = nullptr;  // shared_ptr should dispose of the pointer
+                    root.reset();  // shared_ptr should dispose of the pointer
                 }
                 // root has only left leaf
                 else if(!root->right) {
                     root = root->left;  
-                    root->left = nullptr;  // shared_ptr should dispose of pointer
+                    root->left.reset();  // shared_ptr should dispose of pointer
                 }
                 // root has only right leaf
                 else if(!root->left) {
                     root = root->right;
-                    root->right = nullptr;  // shared_ptr should dispose of pointer
+                    root->right.reset();  // shared_ptr should dispose of pointer
                 }
                 // root has two leafs
                 else {
@@ -125,35 +125,40 @@ class BST {
             if(!from) {
                 return nullptr;
             }
-            to = std::shared_ptr<Node>(new Node(from->key, from->info));
+            to = std::make_shared<Node>(from->key, from->info);
             to->left = deep_copy(from->left, to->left);
             to->right = deep_copy(from->right, to->right);
-            // other->key = root->key;
-            // other->info = root->info;
-            // if(root->left) {
-            //     other->left = std::make_shared<Node>(new Node(root->left->key, root->left->info));
-            //     deep_copy(root->left, other->left);
-            // }
-            // if(root->right) {
-            //     other->right = std::make_shared<Node>(new Node(root->right->key, root->right->info));
-            //     deep_copy(root->left, other->left);
-            // }
             return to;
+        }
+
+        static void clear_aux(std::shared_ptr<Node>& root) {
+            if(!root) {
+                return;
+            }
+            clear_aux(root->left);
+            root->left.reset();
+            clear_aux(root->right);
+            root->right.reset();
+            root.reset();
         }
 
     public:
         BST() : root(nullptr) { }
-        BST(Key key, Info info) : root(std::make_shared<Node>(new Node(key, info))) { }
+        BST(Key key, Info info) : root(std::make_shared<Node>(key, info)) { }
         BST(const BST& other) {
             this->root = deep_copy(other.root, this->root);
         }
         BST& operator=(const BST& other) {
+            if(this->root == other.root) {
+                return *this;
+            }
             this->root = deep_copy(other.root, this->root);
+            return *this;
+        }
+        ~BST() {
+            clear_aux(root);
         }
 
-        /** 
-         * TODO: copy c'tor, operator=.
-        */
         std::shared_ptr<Node> find(const Key key) const {
             return find_aux(root, key);
         }
