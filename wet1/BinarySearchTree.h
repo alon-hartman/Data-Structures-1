@@ -36,7 +36,7 @@ class BST {
 
         static int height_aux(std::shared_ptr<Node>& root) {
             if(!root) {
-                return 0;
+                return -1;
             }
             return root->height;
         }
@@ -183,12 +183,12 @@ class BST {
         std::shared_ptr<Node> find(const Key key) const {
             return find_aux(root, key);
         }
-        void insert(const Key key, const Info info) {
+        virtual void insert(const Key key, const Info info) {
             if(!find(key)) {
                 insert_aux(root, key, info);
             }
         }
-        void remove(Key key) {
+        virtual void remove(Key key) {
             remove_aux(root, key);
         }
 
