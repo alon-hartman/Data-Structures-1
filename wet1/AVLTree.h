@@ -4,6 +4,22 @@
 #include <memory>
 #include <exception>
 #include <iostream>
+#include "Array.h"
+
+
+/*     EXCEPTIONS     */
+class KeyAlreadyExists : public std::exception { 
+    public:
+        virtual const char* what() const noexcept override {
+            return "Key already exists";
+        }
+};
+class KeyDoesNotExist : public std::exception { 
+    public:
+        virtual const char* what() const noexcept override {
+            return "Key does not exist";
+        }
+ };
 
 template<class Key, class Info>
 class AVL {
@@ -21,11 +37,28 @@ class AVL {
                 if(*this == other) {
                     return *this;
                 }
-                return Node(other);
+                this->key = other.key;
+                this->info = other.info;
+                this->left = other.left;
+                this->right = other.right;
+                this->height = other.height;
+                return *this;
             }
-            ~Node() = default;
+            // void destroyNode(std::shared_ptr<Node>& node) {
+            //     if(!node) {
+            //         return;
+            //     }
+            //     destroyNode(node->left);
+            //     destroyNode(node->right);
+            //     node.reset();
+            // }
+            // ~Node() {
+            //     destroyNode(this->left);
+            //     destroyNode(this->right);  // ..?
+            // };
         };
         std::shared_ptr<Node> root;
+        int number_of_nodes = 0;
 
         static int height(std::shared_ptr<Node>& root) {
             if(!root) {
@@ -66,15 +99,6 @@ class AVL {
         }
 
         static void balance_aux(std::shared_ptr<Node>& root) {
-            // if(key == root->key) {
-            //     return;
-            // }
-            // else if(key < root->key) {
-            //     balance_tree_aux(root->left, key);
-            // }
-            // else {  // key > root->key
-            //     balance_tree_aux(root->right, key);
-            // }
             if(!root) {
                 return;
             }
@@ -145,7 +169,6 @@ class AVL {
                 // root has left child
                 else if(!root->right) {
                     root = root->left;
-                    // root->left.reset();
                 }
                 // root has right child
                 else if(!root->left) {  
@@ -165,46 +188,122 @@ class AVL {
             balance_aux(root);
         }
 
+        static void clear_aux(std::shared_ptr<Node>& root) {
+            if(!root) {
+                return;
+            }
+            clear_aux(root->left);
+            clear_aux(root->right);
+            root.reset();
+        }
+
         static std::shared_ptr<Node> deep_copy(const std::shared_ptr<Node>& from, std::shared_ptr<Node>& to) {
             if(!from) {
                 return nullptr;
             }
             to = std::make_shared<Node>(from->key, from->info);
-            // to = std::shared_ptr<Node>(new Node(key, info))
             to->left = deep_copy(from->left, to->left);
             to->right = deep_copy(from->right, to->right);
             return to;
+        }
+
+        /* merge helper functions */
+        static void inorderToList(std::shared_ptr<Node>& root, Array<std::shared_ptr<Node>>& list) {
+            if(!root) {
+                return;
+            }
+            inorderToList(root->left, list);
+            list.push_back(root);
+            inorderToList(root->right, list);
+        }
+        Array<std::shared_ptr<Node>> getTreeAsList() {
+            Array<std::shared_ptr<Node>> list(number_of_nodes);
+            inorderToList(root, list);  // O(n)
+            return list; 
+        }
+        class NodesComparator {
+            public:
+                bool operator()(std::shared_ptr<Node> left, std::shared_ptr<Node> right) {
+                    return left->key < right->key;
+                }
+        };
+        /** 
+         * getTreeFomListAux: creates a balanced binary tree (AVL) from a list in O(n), n being the length of the list:
+         * no need for rotations and searching, each node get assinged a value such that there are balanced number
+         * of nodes from each side, using a proccess similliar to binary search.
+        */
+        static std::shared_ptr<Node> getTreeFromListAux(Array<std::shared_ptr<Node>>& list, int start, int end) {
+            if(start > end) {
+                return nullptr;
+            }
+            int mid = (start+end)/2;
+            std::shared_ptr<Node> root;
+            root = list[mid];//std::make_shared<Node>(list[mid]->key, list[mid]->info);
+            root->left = getTreeFromListAux(list, start, mid-1);
+            root->right = getTreeFromListAux(list, mid+1, end);
+            return root;
+        }
+        static AVL getTreeFromList(Array<std::shared_ptr<Node>>& list) {
+            AVL avl;
+            avl.root = getTreeFromListAux(list, 0, list.getSize());
+            avl.number_of_nodes = list.getSize()+1;
+            // list.clean();
+            std::cout << avl.root.use_count() << std::endl;
+            return avl;
         }
 
     public:
         AVL() = default;
         AVL(Key key, Info info) : root(std::make_shared<Node>(key, info)) { }
         AVL(const AVL& other) {
-            this->root = deep_copy(other.root, this->root);
+            this->root = other.root;//deep_copy(other.root, this->root);
+            this->number_of_nodes = other.number_of_nodes;
+        }
+        ~AVL() {
+            clear_aux(root);  // stack overflow?
         }
         AVL& operator=(const AVL& other) {
             if(this == &other) {
                 return *this;
             }
+            // this->root = other.root;
             this->root = deep_copy(other.root, this->root);
+            this->number_of_nodes = other.number_of_nodes;
             return *this;
         }
 
         std::shared_ptr<Node>& find(const Key key) {
             return find_aux(root, key);
         }
+
         void insert(Key key, Info info) {
             if(find(key)) {
-                throw std::invalid_argument("Key already exist in tree");
+                throw KeyAlreadyExists();
             }
             insert_aux(root, key, info);
+            number_of_nodes++;
         }
-        // std::shared_ptr<Node>& remove(Key key);
         void remove(Key key) {
             if(!find(key)) {
-                throw std::invalid_argument("Key does not exist in tree");
+                throw KeyDoesNotExist();
             }
             remove_aux(root, key);
+            number_of_nodes--;
+        }
+
+        static Info& getInfo(std::shared_ptr<Node>& node) {
+            return node->info;
+        }
+        static Key& getKey(std::shared_ptr<Node>& node) {
+            return node->key;
+        }
+
+        void clear() {
+            clear_aux(root);
+        }
+
+        int get_tree_height() {
+            return height(root);
         }
 
         static void print_inorder(std::shared_ptr<Node>& root) {
@@ -243,9 +342,16 @@ class AVL {
             print_postorder(root);
             std::cout << std::endl;
         }
-        
+
+        static AVL merge(AVL& avl1, AVL& avl2) {
+            NodesComparator cmp;
+            Array<std::shared_ptr<Node>> list1 = avl1.getTreeAsList();  // O(n)
+            Array<std::shared_ptr<Node>> list2 = avl2.getTreeAsList();  // O(m)
+            Array<std::shared_ptr<Node>> merged_list = Array<std::shared_ptr<Node>>::merge(list1, list2, cmp);  // O(n+m)
+            // std::cout << merged_list;
+            return getTreeFromList(merged_list);  // O(n+m)
+            // counting copying and destructing lists and trees (if performed), the overall complexity is still O(n+m)
+        }
 };
-
-
 
 #endif
