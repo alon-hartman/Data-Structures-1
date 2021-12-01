@@ -70,9 +70,7 @@ class Array {
             if(next_empty == size) {
                 throw ArrayIsFull();
             } // T = std::shared_ptr<Node>&(root)
-            T* temp = new T(element);
-            data[next_empty++] = *temp;  // copies element (i think)
-            delete temp;
+            data[next_empty++] = T(element);  // copies element (i think)
         }
 
         template<class Compare = std::less<T>>

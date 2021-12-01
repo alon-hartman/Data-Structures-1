@@ -37,13 +37,15 @@ class AVL {
                 if(*this == other) {
                     return *this;
                 }
-                this->key = other.key;
-                this->info = other.info;
-                this->left = other.left;
-                this->right = other.right;
-                this->height = other.height;
+                // this->key = other.key;
+                // this->info = other.info;
+                // this->left = other.left;
+                // this->right = other.right;
+                // this->height = other.height;
+                *this = Node(other);
                 return *this;
             }
+
             // void destroyNode(std::shared_ptr<Node>& node) {
             //     if(!node) {
             //         return;
@@ -163,7 +165,7 @@ class AVL {
             }
             else {  // key == root->key
                 // root is a leaf
-                if(!root->left && root->right) {
+                if(!root->left && !root->right) {
                     root.reset();
                 }
                 // root has left child
@@ -180,9 +182,14 @@ class AVL {
                     while(next->left) {
                         next = next->left;
                     }
+                    // std::shared_ptr<Node> temp = deep_copy(next, temp);
+                    // temp->left = root->left;
+                    // temp->right = root->right;
+                    // root = deep_copy(temp, root);
                     root->key = next->key;
                     root->info = next->info;
-                    remove_aux(root->right, next->key);
+                    // temp.clear();
+                    remove_aux(root->right, root->key);
                 }
             }
             balance_aux(root);
@@ -238,7 +245,7 @@ class AVL {
             }
             int mid = (start+end)/2;
             std::shared_ptr<Node> root;
-            root = list[mid];//std::make_shared<Node>(list[mid]->key, list[mid]->info);
+            root = std::make_shared<Node>(list[mid]->key, list[mid]->info);
             root->left = getTreeFromListAux(list, start, mid-1);
             root->right = getTreeFromListAux(list, mid+1, end);
             return root;

@@ -19,7 +19,6 @@ struct Group {
         this->level_tree = level_tree;
         max_level_player = nullptr;// not correct
     }
-    
 };
 
 #endif
