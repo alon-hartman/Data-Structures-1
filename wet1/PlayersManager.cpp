@@ -7,7 +7,7 @@
 
 void PlayersManager::AddPlayerToLevelTree(AVL<int, std::shared_ptr<Level>>& level_tree, std::shared_ptr<Player>& player) {
     if(!level_tree.find(player->level)) {
-        std::shared_ptr<Level> level = std::make_shared<Level>(player->id);
+        std::shared_ptr<Level> level = std::make_shared<Level>(player->level);
         level_tree.insert(player->level, level);
     }
     (level_tree.getInfo(player->level))->player_tree.insert(player->id, player);
@@ -72,6 +72,11 @@ void PlayersManager::updateGroupPointers(std::shared_ptr<Group>& group, std::sha
 
 void PlayersManager::updateMaxLevel(AVL<int, std::shared_ptr<Level>>& level_tree, MaxPlayerInfo& max_player_info) {
     std::shared_ptr<Level>& max_level = level_tree.getMax();  // O(logn)
+    if(max_level->player_tree.number_of_nodes == 0) {
+        max_player_info.id = -1;
+        max_player_info.level = -1;
+        return;
+    }
     std::shared_ptr<Player>& max_player = max_level->player_tree.getMin();  // O(logn)
     max_player_info.id = max_player->id;
     max_player_info.level = max_player->level;
@@ -142,19 +147,26 @@ StatusType PlayersManager::RemovePlayer(int playerid) { // O(logn)
         return INVALID_INPUT;
     }
     try {
-        // Player player(playerid);
         if(player_tree.find(playerid) == nullptr) {  // O(logn)
             return FAILURE;
         }
         int player_level = player_tree.getInfo(playerid)->level;
         Group* group = (player_tree.getInfo(playerid))->group;  // O(logn)
 
-        group->level_tree.getInfo(player_level)->player_tree.remove(playerid);  // O(logn)
+        Level* group_level = group->level_tree.getInfo(player_level).get();
+        group_level->player_tree.remove(playerid);  // O(logn)
         updateMaxLevel(group->level_tree, group->max_level_player);
 
-        level_tree.getInfo(player_level)->player_tree.remove(playerid);  // O(logn)
+        Level* level = level_tree.getInfo(player_level).get();
+        level->player_tree.remove(playerid);  // O(logn)
         player_tree.remove(playerid);  // O(logn)
 
+        if(level->player_tree.number_of_nodes == 0) {
+            level_tree.remove(level->id);
+        }
+        if(group_level->player_tree.number_of_nodes == 0) {
+            group->level_tree.remove(group_level->id);
+        }
         updateMaxLevel(level_tree, this->max_level_player);
     }
     catch(const KeyDoesNotExist& e) {
@@ -203,6 +215,12 @@ StatusType PlayersManager::IncreaseLevel(int playerid, int levelincrease) {
         Level* level_group = player->group->level_tree.getInfo(player->level).get();  // O(logn)
         level->player_tree.remove(player->id);  // O(logn)
         level_group->player_tree.remove(player->id);  // O(logn)
+        if(level->player_tree.number_of_nodes == 0) {
+            level_tree.remove(level->id);
+        }
+        if(level_group->player_tree.number_of_nodes == 0) {
+            player->group->level_tree.remove(level_group->id);
+        }
         
         player->level += levelincrease;
 
@@ -269,8 +287,10 @@ int main() {
     assert(pm.AddPlayer(5, 5, 1) == FAILURE);
 
     assert(pm.IncreaseLevel(1, 4) == SUCCESS);
-    assert(pm.IncreaseLevel(5, 2) == SUCCESS);
+    assert(pm.IncreaseLevel(5, 7) == SUCCESS);
     assert(pm.IncreaseLevel(11, 2) == FAILURE);
+    assert(pm.IncreaseLevel(3, 1) == SUCCESS);
+    assert(pm.RemovePlayer(5) == SUCCESS);
 
     int temp = 1;
 }
