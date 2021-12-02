@@ -69,8 +69,8 @@ class Array {
         void push_back(const T& element) {
             if(next_empty == size) {
                 throw ArrayIsFull();
-            } // T = std::shared_ptr<Node>&(root)
-            data[next_empty++] = T(element);  // copies element (i think)
+            }
+            data[next_empty++] = element;  // copies element (i think)
         }
 
         template<class Compare = std::less<T>>

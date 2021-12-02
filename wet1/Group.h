@@ -2,23 +2,34 @@
 #define GROUP_H
 
 #include "AVLTree.h"
-#include "Player.h"
+// #include "Player.h"
+#include "Level.h"
 
+struct MaxPlayerInfo {
+    int id;
+    int level;
+    MaxPlayerInfo() : id(-1), level(-1) {}
+};
+
+class Player;
 struct Group {
     int id;
-    AVL<Player, Group&> level_tree;
-    Player* max_level_player;
+    AVL<int, std::shared_ptr<Level>> level_tree;
+    MaxPlayerInfo max_level_player;
     
-    Group(int id) {
-        this->id = id;
-        AVL<Player, Group&> level_tree;
-        max_level_player = nullptr;
-    }
-    Group(int id, AVL<Player,Group&>& level_tree){
-        this->id = id;
-        this->level_tree = level_tree;
-        max_level_player = nullptr;// not correct
-    }
+    Group(const int id) : id(id), level_tree(), max_level_player() { }
+
+    Group(int id, AVL<int, std::shared_ptr<Level>>& level_tree) : id(id), level_tree(level_tree), max_level_player() { }
+    // Group& operator=(const Group& other) {
+    //     if(this == &other) {
+    //         return *this;
+    //     }
+    //     id = other.id;
+    //     level_tree.clear();
+    //     level_tree.copyRoot(other.level_tree);
+    //     max_level_player = other.max_level_player;
+    //     return *this;
+    // }
 };
 
 #endif
