@@ -7,11 +7,11 @@
 #include "Level.h"
 
 typedef enum {
-    ALLOCATION_ERROR = -2,
-    INVALID_INPUT = -3,
-    FAILURE = -1,
-    SUCCESS = 0
-} StatusType;
+    PM_ALLOCATION_ERROR = -2,
+    PM_INVALID_INPUT = -3,
+    PM_FAILURE = -1,
+    PM_SUCCESS = 0
+} PMStatusType;
 
 class PlayersManager {
     private:
@@ -34,14 +34,14 @@ class PlayersManager {
         static void InorderGroupTree(Array<int>& array, std::shared_ptr<Node<int, std::shared_ptr<Group>>>& root, int* printed);
     public:
         // PlayersManager();
-        StatusType AddGroup(int groupid);
-        StatusType AddPlayer(int playerid, int groupid, int level);
-        StatusType RemovePlayer(int playerid);
-        StatusType ReplaceGroup(int groupid, int replacementid);
-        StatusType IncreaseLevel(int playerid, int levelincrease);
-        StatusType GetHighestLevel(int groupid, int* playerid);
-        StatusType GetAllPlayersByLevel(int groupid, int **Players, int *numOfPlayers);
-        StatusType GetGroupsHighestLevel(int numOfGroups, int** Players);
+        PMStatusType AddGroup(int groupid);
+        PMStatusType AddPlayer(int playerid, int groupid, int level);
+        PMStatusType RemovePlayer(int playerid);
+        PMStatusType ReplaceGroup(int groupid, int replacementid);
+        PMStatusType IncreaseLevel(int playerid, int levelincrease);
+        PMStatusType GetHighestLevel(int groupid, int* playerid);
+        PMStatusType GetAllPlayersByLevel(int groupid, int **Players, int *numOfPlayers);
+        PMStatusType GetGroupsHighestLevel(int numOfGroups, int** Players);
 };
 
 #endif

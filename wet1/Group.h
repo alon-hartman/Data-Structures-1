@@ -18,9 +18,9 @@ struct Group {
     AVL<int, std::shared_ptr<Level>> level_tree;
     MaxPlayerInfo max_level_player;
     
-    Group(const int id) : id(id), level_tree(), max_level_player(), size(0) { }
+    Group(const int id) : id(id), size(0), level_tree(), max_level_player() { }
 
-    Group(int id, AVL<int, std::shared_ptr<Level>>& level_tree) : id(id), level_tree(level_tree), max_level_player(), size(0) { }
+    Group(int id, AVL<int, std::shared_ptr<Level>>& level_tree) : id(id), size(0), level_tree(level_tree), max_level_player() { }
     // Group& operator=(const Group& other) {
     //     if(this == &other) {
     //         return *this;
