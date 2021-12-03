@@ -152,7 +152,6 @@ class AVL {
             else {  // key == root->key
                 // root is a leaf
                 if(!root->left && !root->right) {
-                    // std::cout << root->key << ", " << root->info->id << ": " << root->info.use_count() << std::endl;
                     root = nullptr;//.reset();
                 }
                 // root has left child
@@ -260,7 +259,6 @@ class AVL {
             avl.root = getTreeFromListAux(list, 0, list.getSize());
             avl.number_of_nodes = list.getSize()+1;
             // list.clean();
-            std::cout << avl.root.use_count() << std::endl;
             return avl;
         }
 

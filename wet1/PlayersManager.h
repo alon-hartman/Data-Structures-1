@@ -7,15 +7,16 @@
 #include "Level.h"
 
 typedef enum {
-    ALLOCATION_ERROR,
-    INVALID_INPUT,
-    FAILURE,
-    SUCCESS
+    ALLOCATION_ERROR = -2,
+    INVALID_INPUT = -3,
+    FAILURE = -1,
+    SUCCESS = 0
 } StatusType;
 
 class PlayersManager {
     private:
         AVL<int, std::shared_ptr<Group>> group_tree;
+        AVL<int, std::shared_ptr<Group>> not_empty_group_tree;
         AVL<int, std::shared_ptr<Player>> player_tree;
         AVL<int, std::shared_ptr<Level>> level_tree;
         MaxPlayerInfo max_level_player;
@@ -27,6 +28,10 @@ class PlayersManager {
         static void updateMaxLevel(AVL<int, std::shared_ptr<Level>>& level_tree, MaxPlayerInfo& max_player_info);
 
         static Array<Node<int, std::shared_ptr<Level>>*> removeDuplicates(Array<Node<int, std::shared_ptr<Level>>*>& list);
+
+        static void ReverseInorderLevelTree(Array<int>& Players, std::shared_ptr<Node<int, std::shared_ptr<Level>>>& root);
+        static void InorderPlayerTree(Array<int>& Players, std::shared_ptr<Node<int, std::shared_ptr<Player>>>& root);
+        static void InorderGroupTree(Array<int>& array, std::shared_ptr<Node<int, std::shared_ptr<Group>>>& root, int* printed);
     public:
         // PlayersManager();
         StatusType AddGroup(int groupid);
@@ -34,6 +39,9 @@ class PlayersManager {
         StatusType RemovePlayer(int playerid);
         StatusType ReplaceGroup(int groupid, int replacementid);
         StatusType IncreaseLevel(int playerid, int levelincrease);
+        StatusType GetHighestLevel(int groupid, int* playerid);
+        StatusType GetAllPlayersByLevel(int groupid, int **Players, int *numOfPlayers);
+        StatusType GetGroupsHighestLevel(int numOfGroups, int** Players);
 };
 
 #endif

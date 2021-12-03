@@ -14,12 +14,13 @@ struct MaxPlayerInfo {
 class Player;
 struct Group {
     int id;
+    int size;
     AVL<int, std::shared_ptr<Level>> level_tree;
     MaxPlayerInfo max_level_player;
     
-    Group(const int id) : id(id), level_tree(), max_level_player() { }
+    Group(const int id) : id(id), level_tree(), max_level_player(), size(0) { }
 
-    Group(int id, AVL<int, std::shared_ptr<Level>>& level_tree) : id(id), level_tree(level_tree), max_level_player() { }
+    Group(int id, AVL<int, std::shared_ptr<Level>>& level_tree) : id(id), level_tree(level_tree), max_level_player(), size(0) { }
     // Group& operator=(const Group& other) {
     //     if(this == &other) {
     //         return *this;

@@ -48,6 +48,9 @@ class Array {
         int getSize() {
             return size-1;
         }
+        T* getData() {
+            return data;
+        }
         Array& operator=(const Array& other) {
             if(data == other.data) {
                 return *this;
@@ -90,22 +93,6 @@ class Array {
             while(j<list2.next_empty) merged.push_back(list2[j++]);
             return merged;
         }
-
-        // void print(std::ostream& os) const {  // temporary
-        //     os << "[ ";
-        //     for(int i=0; i<size-1; ++i) {
-        //         os << data[i]->key << ", ";
-        //     }
-        //     os << data[size-1]->key << " ]" << std::endl;
-        // }
-        // template<class S>
-        // friend std::ostream& operator<<(std::ostream& os, const Array<S>& arr);
 };
-
-// template<class T>
-// std::ostream& operator<<(std::ostream& os, const Array<T>& arr) {
-//     arr.print(os);
-//     return os;
-// }
 
 #endif

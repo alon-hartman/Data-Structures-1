@@ -11,7 +11,6 @@ void PlayersManager::AddPlayerToLevelTree(AVL<int, std::shared_ptr<Level>>& leve
         level_tree.insert(player->level, level);
     }
     (level_tree.getInfo(player->level))->player_tree.insert(player->id, player);
-    // level.player_tree.insert(player.id, player);
 }
 
 void PlayersManager::AddPlayerToGroupTree(Group& group, std::shared_ptr<Player>& player) {
@@ -21,6 +20,7 @@ void PlayersManager::AddPlayerToGroupTree(Group& group, std::shared_ptr<Player>&
         group.level_tree.insert(player->level, new_level);
     }
     (group.level_tree.getInfo(player->level))->player_tree.insert(player->id, player);
+    group.size++;
     // max player level maintaince
     if(player->level > group.max_level_player.level) {
         group.max_level_player.id = player->id;
@@ -71,12 +71,14 @@ void PlayersManager::updateGroupPointers(std::shared_ptr<Group>& group, std::sha
 }
 
 void PlayersManager::updateMaxLevel(AVL<int, std::shared_ptr<Level>>& level_tree, MaxPlayerInfo& max_player_info) {
-    std::shared_ptr<Level>& max_level = level_tree.getMax();  // O(logn)
-    if(max_level->player_tree.number_of_nodes == 0) {
+    if(level_tree.number_of_nodes == 0) {
         max_player_info.id = -1;
         max_player_info.level = -1;
         return;
     }
+    // if here then there is at least one node, which means the node isn't empty which means the following operations
+    // must succeed (as long as this function is called after removed empty nodes).
+    std::shared_ptr<Level>& max_level = level_tree.getMax();  // O(logn)
     std::shared_ptr<Player>& max_player = max_level->player_tree.getMin();  // O(logn)
     max_player_info.id = max_player->id;
     max_player_info.level = max_player->level;
@@ -85,7 +87,7 @@ void PlayersManager::updateMaxLevel(AVL<int, std::shared_ptr<Level>>& level_tree
  *                                             MEMBER FUNCTIONS                                                       *
 ***********************************************************************************************************************/
 
-StatusType PlayersManager::AddGroup(int groupid) {
+StatusType PlayersManager::AddGroup(int groupid) { //O(logk)
     if(groupid <= 0) {
         return INVALID_INPUT;
     }
@@ -104,23 +106,28 @@ StatusType PlayersManager::AddGroup(int groupid) {
     }
     return SUCCESS;
 }
-/**
- * TODO: add max player maintaince.
- */
-StatusType PlayersManager::AddPlayer(int playerid, int groupid, int level) {
+
+StatusType PlayersManager::AddPlayer(const int playerid, const int groupid, const int level) { // O(logk) + log(logn)
     if(playerid <= 0 || groupid <= 0 || level < 0) {
         return INVALID_INPUT;
     }
+    int allocations = 0;
+    if(group_tree.find(groupid) == nullptr || player_tree.find(playerid)) {  // O(logk) + log(logn)
+        return FAILURE;
+    }
+    std::shared_ptr<Player> player = std::make_shared<Player>(playerid, level);
+    std::shared_ptr<Group>& group = group_tree.getInfo(groupid);  // O(logk)
+    player->group = group.get();
     try {
-        if(group_tree.find(groupid) == nullptr || player_tree.find(playerid)) {  // O(logk) + log(logn)
-            return FAILURE;
-        }
-        std::shared_ptr<Player> player = std::make_shared<Player>(playerid, level);
-        Group* group = (group_tree.getInfo(groupid)).get();  // O(logk)
-        player->group = group;
         player_tree.insert(playerid, player);
-        PlayersManager::AddPlayerToGroupTree(*group, player);
+        allocations++;
+        PlayersManager::AddPlayerToGroupTree(*(group.get()), player);
+        allocations++;
         PlayersManager::AddPlayerToLevelTree(level_tree, player);
+        allocations++;
+        if(group->size == 1) {
+            not_empty_group_tree.insert(group->id, group);  // O(logn)
+        }
 
         // maintaince max level in all players
         if(level >= max_level_player.level) {
@@ -134,6 +141,18 @@ StatusType PlayersManager::AddPlayer(int playerid, int groupid, int level) {
         }
     }
     catch(const std::bad_alloc& e) {
+        if(allocations == 1) {
+            player_tree.remove(playerid);
+        }
+        else if(allocations == 2) {
+            player_tree.remove(playerid);
+            Level* level_obj = group->level_tree.getInfo(level).get();  // O(logn)
+            level_obj->player_tree.remove(playerid);  // O(logn)
+            group->size--;
+        }
+        else if(allocations == 3) {
+            RemovePlayer(playerid);
+        }
         return ALLOCATION_ERROR;
     }
     catch(const KeyAlreadyExists& e) {
@@ -152,14 +171,17 @@ StatusType PlayersManager::RemovePlayer(int playerid) { // O(logn)
         }
         int player_level = player_tree.getInfo(playerid)->level;
         Group* group = (player_tree.getInfo(playerid))->group;  // O(logn)
-
         Level* group_level = group->level_tree.getInfo(player_level).get();
         group_level->player_tree.remove(playerid);  // O(logn)
-        updateMaxLevel(group->level_tree, group->max_level_player);
 
         Level* level = level_tree.getInfo(player_level).get();
         level->player_tree.remove(playerid);  // O(logn)
         player_tree.remove(playerid);  // O(logn)
+
+        group->size--;
+        if(group->size == 0) {
+            not_empty_group_tree.remove(group->id);  // O(logn) because the n must be larger than the number of not empty groups (each group has atleast one player)
+        }
 
         if(level->player_tree.number_of_nodes == 0) {
             level_tree.remove(level->id);
@@ -167,6 +189,7 @@ StatusType PlayersManager::RemovePlayer(int playerid) { // O(logn)
         if(group_level->player_tree.number_of_nodes == 0) {
             group->level_tree.remove(group_level->id);
         }
+        updateMaxLevel(group->level_tree, group->max_level_player);
         updateMaxLevel(level_tree, this->max_level_player);
     }
     catch(const KeyDoesNotExist& e) {
@@ -190,13 +213,18 @@ StatusType PlayersManager::ReplaceGroup(int groupid, int replacementid) { // O(l
         AVL<int, std::shared_ptr<Level>> merged = AVL<int, std::shared_ptr<Level>>::listToAVL(no_duplicates_list);
         std::shared_ptr<Node<int, std::shared_ptr<Level>>> root = merged.root;
         std::shared_ptr<Group> new_group = std::make_shared<Group>(replacementid, merged);
+        new_group->size = g1->size + g2->size;
+
         PlayersManager::updateGroupPointers(new_group, root);
         group_tree.remove(groupid);
         group_tree.remove(replacementid);
+        not_empty_group_tree.remove(groupid);
+        not_empty_group_tree.remove(replacementid);
 
         updateMaxLevel(new_group->level_tree, new_group->max_level_player);
 
         group_tree.insert(replacementid, new_group);
+        not_empty_group_tree.insert(replacementid, new_group);
         
     }
     catch(const std::bad_alloc& e) {
@@ -205,10 +233,14 @@ StatusType PlayersManager::ReplaceGroup(int groupid, int replacementid) { // O(l
     return SUCCESS;
 }
 
-StatusType PlayersManager::IncreaseLevel(int playerid, int levelincrease) {
+StatusType PlayersManager::IncreaseLevel(int playerid, int levelincrease) { //O(logn)
     if(playerid <= 0 || levelincrease <= 0) {
         return INVALID_INPUT;
     }
+    /** TODO: handle allocation failures (return tree to previous state)*/
+
+    // bool new_level_tree = false;
+    // bool new_group_level_tree = false;
     try { // O(logn)
         std::shared_ptr<Player>& player = player_tree.getInfo(playerid);  // should throw if not found
         Level* level = level_tree.getInfo(player->level).get();  // O(logn)
@@ -224,22 +256,24 @@ StatusType PlayersManager::IncreaseLevel(int playerid, int levelincrease) {
         
         player->level += levelincrease;
 
-        if(!level_tree.find(player->level)) {
+        if(!level_tree.find(player->level)) {  // create and insert new level to level_tree
             std::shared_ptr<Level> new_level_ptr = std::make_shared<Level>(player->level);
             level_tree.insert(player->level, new_level_ptr);
+            // new_level_tree = true;
         }
         Level* new_level = level_tree.getInfo(player->level).get();  // O(logn)
-        if(!player->group->level_tree.find(player->level)) {
+        if(!player->group->level_tree.find(player->level)) {  // create and insert new level to group->level_tree
             std::shared_ptr<Level> new_level_ptr = std::make_shared<Level>(player->level);
             player->group->level_tree.insert(player->level, new_level_ptr);
+            // new_group_level_tree = true;
         }
         Level* new_level_group = player->group->level_tree.getInfo(player->level).get();  // O(logn)
         new_level->player_tree.insert(player->id, player);  // O(logn)
         new_level_group->player_tree.insert(player->id, player);  // O(logn)
         
         if(player->level >= this->max_level_player.level) {
-            if(player->id == this->max_level_player.id) {
-                this->max_level_player.id = player->id;
+            if(player->level == this->max_level_player.level) {
+                this->max_level_player.id = std::min(player->id, max_level_player.id);
             }
             else {
                 this->max_level_player.id = player->id;
@@ -258,6 +292,167 @@ StatusType PlayersManager::IncreaseLevel(int playerid, int levelincrease) {
     return SUCCESS;
 }
 
+StatusType PlayersManager::GetHighestLevel(int groupid, int* playerid) {
+    if(groupid == 0 || playerid == nullptr) {
+        return INVALID_INPUT;
+    }
+    if(groupid < 0) {
+        *playerid = max_level_player.id;
+        return SUCCESS;
+    }
+    try {
+        Group* group = group_tree.getInfo(groupid).get();
+        *playerid = group->max_level_player.id;
+        return SUCCESS;
+    }
+    catch(const KeyDoesNotExist& e) {
+        return FAILURE;
+    }
+}
+
+void PlayersManager::InorderPlayerTree(Array<int>& Players, std::shared_ptr<Node<int, std::shared_ptr<Player>>>& root) {
+    if(!root) {
+        return;
+    }
+    InorderPlayerTree(Players, root->left);
+    Players.push_back(root->key);
+    InorderPlayerTree(Players, root->right);
+}
+
+void PlayersManager::ReverseInorderLevelTree(Array<int>& Players, std::shared_ptr<Node<int, std::shared_ptr<Level>>>& root) {
+    if(!root) {
+        return;
+    }
+    ReverseInorderLevelTree(Players, root->right);
+    InorderPlayerTree(Players, root->info->player_tree.root);
+    ReverseInorderLevelTree(Players, root->left);
+}
+
+// int* PlayersManager::GetAllPlayersByLevelAux(int num_of_players, AVL<int, std::shared_ptr<Level>>& level_tree) {
+//     Array<int> array(num_of_players);
+//     int* players = (int*)malloc(sizeof(int)*num_of_players);
+//     if(!players) {
+//         throw std::bad_alloc();
+//     }
+//     ReverseInorderLevelTree(array, level_tree);
+//     for(int i=0; i<=array.getSize(); ++i) {
+//         players[i] = array[i];
+//     }
+//     return players;
+// }
+
+StatusType PlayersManager::GetAllPlayersByLevel(int groupid, int **Players, int *numOfPlayers) {
+    if(groupid == 0 || Players == nullptr || numOfPlayers == nullptr) {
+        return INVALID_INPUT;
+    }
+    try {
+        if(groupid < 0) {
+            if(player_tree.number_of_nodes == 0) {
+                *numOfPlayers = 0;
+                *Players = nullptr;
+                return SUCCESS;
+            }
+            Array<int> array(player_tree.number_of_nodes);
+            ReverseInorderLevelTree(array, level_tree.root);
+            *Players = (int*)malloc(sizeof(int)*player_tree.number_of_nodes);
+            if(!*Players) {
+                return ALLOCATION_ERROR;
+            }
+            *numOfPlayers = player_tree.number_of_nodes;
+            for(int i=0; i<=array.getSize(); ++i) {
+                (*Players)[i] = array[i];
+            } 
+        }
+        else {
+            Group* group = group_tree.getInfo(groupid).get();
+            if(group->size == 0) {
+                *numOfPlayers = 0;
+                *Players = nullptr;
+                return SUCCESS;
+            }
+            Array<int> array(group->size);
+            *Players = (int*)malloc(sizeof(int)*group->size);
+            if(!*Players) {
+                return ALLOCATION_ERROR;
+            }
+            ReverseInorderLevelTree(array, group->level_tree.root);
+            *numOfPlayers = group->size;
+            for(int i=0; i<=array.getSize(); ++i) {
+                (*Players)[i] = array[i];
+            }
+        }
+    }
+    catch(std::bad_alloc& e) {
+        return ALLOCATION_ERROR;
+    }
+    catch(KeyDoesNotExist& e) {
+        return FAILURE;
+    }
+    return SUCCESS;
+}
+
+void PlayersManager::InorderGroupTree(Array<int>& array, std::shared_ptr<Node<int, std::shared_ptr<Group>>>& root, int* printed){
+    if(!root || *printed == 0) {
+        return;
+    }
+    InorderGroupTree(array, root->left, printed);
+    if(printed > 0) {
+        array.push_back(root->info->max_level_player.id);
+        (*printed)--;
+    }
+    InorderGroupTree(array, root->right, printed);
+}
+
+StatusType PlayersManager::GetGroupsHighestLevel(int numOfGroups, int** Players) {
+    if(numOfGroups < 1 || Players == nullptr) {
+        return INVALID_INPUT;
+    }
+    if(not_empty_group_tree.number_of_nodes < numOfGroups) {
+        return FAILURE;
+    }
+    try {
+        Array<int> array(numOfGroups);
+        *Players = (int*)malloc(sizeof(int)*numOfGroups);
+        if(!*Players) {
+            return ALLOCATION_ERROR;
+        }
+        InorderGroupTree(array, not_empty_group_tree.root, &numOfGroups);
+        for(int i=0; i<=array.getSize(); ++i) {
+            (*Players)[i] = array[i];
+        }
+    }
+    catch(std::bad_alloc& e) {
+        return ALLOCATION_ERROR;
+    }
+    return SUCCESS;
+}
+
+void PrintAll(int *playerIDs, int numOfPlayers) {
+	if (numOfPlayers > 0) {
+		std::cout << "Rank	||	Player" << std::endl;
+	}
+
+	for (int i = 0; i < numOfPlayers; i++) {
+		std::cout << i + 1 << "\t||\t" << playerIDs[i] << std::endl;
+	}
+	std::cout << "and there are no more players!" << std::endl;
+
+	free (playerIDs);
+}
+
+void PrintGroupsHighest(int *playerIDs, int numOfGroups) {
+	if (numOfGroups > 0) {
+		std::cout << "GroupIndex	||	Player" << std::endl;
+	}
+
+	for (int i = 0; i < numOfGroups; i++) {
+		std::cout << i + 1 << "\t||\t" << playerIDs[i] << std::endl;
+	}
+	std::cout << "and there are no more players!" << std::endl;
+
+	free (playerIDs);
+}
+
 int main() {
     PlayersManager pm;
     assert(pm.AddGroup(2) == SUCCESS);
@@ -266,6 +461,13 @@ int main() {
     assert(pm.AddGroup(1) == SUCCESS);
     assert(pm.AddGroup(7) == SUCCESS);
     assert(pm.AddGroup(2) == FAILURE);
+    int numOfPlayers;
+    int *playerIDs;
+    assert(pm.GetAllPlayersByLevel(-1, &playerIDs, &numOfPlayers) == SUCCESS);
+    PrintAll(playerIDs, numOfPlayers);
+    int* res = new int(0);
+    assert(pm.GetHighestLevel(-1, res) == SUCCESS);
+    assert(*res == -1);
     assert(pm.AddPlayer(1, 2, 1) == SUCCESS);
     assert(pm.AddPlayer(2, 2, 1) == SUCCESS);
     assert(pm.AddPlayer(3, 2, 2) == SUCCESS);
@@ -290,7 +492,40 @@ int main() {
     assert(pm.IncreaseLevel(5, 7) == SUCCESS);
     assert(pm.IncreaseLevel(11, 2) == FAILURE);
     assert(pm.IncreaseLevel(3, 1) == SUCCESS);
+    *res = 0;
+    assert(pm.GetHighestLevel(-10, res) == SUCCESS);
+    assert(*res == 5);
     assert(pm.RemovePlayer(5) == SUCCESS);
+    *res = 0;
+    assert(pm.GetHighestLevel(5, res) == SUCCESS);
+    assert(*res == -1);
+    *res = 0;
+    assert(pm.GetHighestLevel(3, res) == SUCCESS);
+    assert(*res = 1);
+    assert(pm.GetHighestLevel(100, res) == FAILURE);
+    assert(pm.GetHighestLevel(0, res) == INVALID_INPUT);
+    assert(pm.GetHighestLevel(2, nullptr) == INVALID_INPUT);
 
-    int temp = 1;
+    delete res;
+
+    
+    assert(pm.GetAllPlayersByLevel(3, &playerIDs, &numOfPlayers) == SUCCESS);
+    PrintAll(playerIDs, numOfPlayers);
+    assert(pm.GetAllPlayersByLevel(5, &playerIDs, &numOfPlayers) == SUCCESS);
+    PrintAll(playerIDs, numOfPlayers);
+    assert(pm.GetAllPlayersByLevel(11, &playerIDs, &numOfPlayers) == FAILURE);
+    assert(pm.GetAllPlayersByLevel(3, nullptr, &numOfPlayers) == INVALID_INPUT);
+    assert(pm.GetAllPlayersByLevel(3, &playerIDs, nullptr) == INVALID_INPUT);
+    assert(pm.AddPlayer(13, 7, 3) == SUCCESS);
+    assert(pm.GetAllPlayersByLevel(7, &playerIDs, &numOfPlayers) == SUCCESS);
+    PrintAll(playerIDs, numOfPlayers);
+
+    assert(pm.GetAllPlayersByLevel(-1, &playerIDs, &numOfPlayers) == SUCCESS);
+    PrintAll(playerIDs, numOfPlayers);
+
+    assert(pm.GetGroupsHighestLevel(1, &playerIDs) == SUCCESS);
+    PrintGroupsHighest(playerIDs, 1);
+    assert(pm.GetGroupsHighestLevel(2, &playerIDs) == SUCCESS);
+    PrintGroupsHighest(playerIDs, 2);
+    assert(pm.GetGroupsHighestLevel(3, &playerIDs) == FAILURE);
 }
