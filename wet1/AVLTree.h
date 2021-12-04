@@ -38,11 +38,6 @@ struct Node {
     Node(const Key& key, Info info) : 
         key(key), info(info), left(nullptr), right(nullptr), height(0) { }
     Node(const Node& other) : key(other.key), info(other.info), left(other.left), right(other.right), height(height) { }
-    // ~Node() {
-    //     info = nullptr;
-    //     left.reset();
-    //     right.reset();
-    // }
 };
 template<class Key, class Info>
 class AVL {
@@ -168,13 +163,8 @@ class AVL {
                     while(next->left) {
                         next = next->left;
                     }
-                    // std::shared_ptr<Node> temp = deep_copy(next, temp);
-                    // temp->left = root->left;
-                    // temp->right = root->right;
-                    // root = deep_copy(temp, root);
                     root->key = next->key;
                     root->info = next->info;
-                    // temp.clear();
                     remove_aux(root->right, root->key);
                 }
             }
@@ -200,9 +190,6 @@ class AVL {
             }
             clear_aux(root->left);
             clear_aux(root->right);
-            // root->info.reset();// = nullptr;
-            // root->left = nullptr;
-            // root->right = nullptr;
             root.reset();
         }
 
@@ -248,8 +235,6 @@ class AVL {
             int mid = (start+end)/2;
             std::shared_ptr<_Node> root;
             root = std::make_shared<_Node>(list[mid]->key, list[mid]->info);
-            // root = std::shared_ptr<Node>(list[mid]);
-            // free(list[mid]);
             root->left = getTreeFromListAux(list, start, mid-1);
             root->right = getTreeFromListAux(list, mid+1, end);
             return root;
@@ -258,7 +243,6 @@ class AVL {
             AVL avl;
             avl.root = getTreeFromListAux(list, 0, list.getSize());
             avl.number_of_nodes = list.getSize()+1;
-            // list.clean();
             return avl;
         }
 
@@ -279,7 +263,6 @@ class AVL {
             if(this == &other) {
                 return *this;
             }
-            // this->root = other.root;
             this->root = deep_copy(other.root, this->root);
             this->number_of_nodes = other.number_of_nodes;
             return *this;
@@ -302,7 +285,6 @@ class AVL {
             if(find(key)) {
                 throw KeyAlreadyExists();
             }
-            // std::shared_ptr<Info> info_ptr = std::shared_ptr<Info>(&info);
             insert_aux(root, key, info);
             number_of_nodes++;
         }
@@ -327,13 +309,6 @@ class AVL {
             return getMinAux(root);
         }
 
-        // static Info& getInfo(std::shared_ptr<_Node>& node) {
-        //     return node->info;
-        // }
-        // static Key& getKey(std::shared_ptr<_Node>& node) {
-        //     return node->key;
-        // }
-
         void clear() {
             clear_aux(root);
         }
@@ -342,42 +317,42 @@ class AVL {
             return height(root);
         }
 
-        static void print_inorder(std::shared_ptr<_Node>& root) {
-            if(!root) {
-                return;
-            }
-            print_inorder(root->left);
-            std::cout << (root->key) << ", ";
-            print_inorder(root->right);
-        }
-        void inorder() {
-            print_inorder(root);
-            std::cout << std::endl;
-        }
-        static void print_preorder(std::shared_ptr<_Node>& root) {
-            if(!root) {
-                return;
-            }
-            std::cout << root->key << ", ";
-            print_preorder(root->left);
-            print_preorder(root->right);
-        }
-        void preorder() {
-            print_preorder(root);
-            std::cout << std::endl;
-        }
-        static void print_postorder(std::shared_ptr<_Node>& root) {
-            if(!root) {
-                return;
-            }
-            print_postorder(root->left);
-            print_postorder(root->right);
-            std::cout << root->key << ", ";
-        }
-        void postorder() {
-            print_postorder(root);
-            std::cout << std::endl;
-        }
+        // static void print_inorder(std::shared_ptr<_Node>& root) {
+        //     if(!root) {
+        //         return;
+        //     }
+        //     print_inorder(root->left);
+        //     std::cout << (root->key) << ", ";
+        //     print_inorder(root->right);
+        // }
+        // void inorder() {
+        //     print_inorder(root);
+        //     std::cout << std::endl;
+        // }
+        // static void print_preorder(std::shared_ptr<_Node>& root) {
+        //     if(!root) {
+        //         return;
+        //     }
+        //     std::cout << root->key << ", ";
+        //     print_preorder(root->left);
+        //     print_preorder(root->right);
+        // }
+        // void preorder() {
+        //     print_preorder(root);
+        //     std::cout << std::endl;
+        // }
+        // static void print_postorder(std::shared_ptr<_Node>& root) {
+        //     if(!root) {
+        //         return;
+        //     }
+        //     print_postorder(root->left);
+        //     print_postorder(root->right);
+        //     std::cout << root->key << ", ";
+        // }
+        // void postorder() {
+        //     print_postorder(root);
+        //     std::cout << std::endl;
+        // }
 
         static Array<_Node*> mergeToList(AVL& avl1, AVL& avl2) {
             NodesComparator cmp;
@@ -388,9 +363,7 @@ class AVL {
         }
 
         static AVL listToAVL(Array<_Node*>& list) {
-            // std::cout << merged_list;
             AVL avl = getTreeFromList(list);  // O(n+m)
-            // return getTreeFromList(merged_list);  // O(n+m)
             return avl;
             // counting copying and destructing lists and trees (if performed), the overall complexity is still O(n+m)
         }

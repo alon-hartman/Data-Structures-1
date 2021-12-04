@@ -240,8 +240,6 @@ PMStatusType PlayersManager::ReplaceGroup(int groupid, int replacementid) { // O
     try {
         std::shared_ptr<Group> g1 = (group_tree.getInfo(groupid));
         std::shared_ptr<Group> g2 = (group_tree.getInfo(replacementid));
-        // Group* g1 = group_tree.getInfo(groupid).get();
-        // Group* g2 = group_tree.getInfo(replacementid).get();
 
         if(g1->size == 0)  {  // no players in group
             group_tree.remove(groupid);
