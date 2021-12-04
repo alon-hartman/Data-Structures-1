@@ -1,0 +1,20 @@
+Init
+AddGroup 45
+AddPlayer 299 45 6
+AddPlayer 849 45 0
+AddPlayer 1584 45 7
+AddPlayer 1078 45 7
+AddPlayer 938 45 9
+AddPlayer 191 45 2
+AddPlayer 1071 45 4
+AddPlayer 1983 45 9
+AddPlayer 505 45 4
+AddPlayer 1993 45 0
+AddPlayer 1025 45 2
+AddPlayer 1096 45 4
+IncreaseLevel 505 5
+IncreaseLevel 299 3
+GetGroupsHighestLevel 1
+GetHighestLevel 45
+GetHighestLevel -1
+Quit

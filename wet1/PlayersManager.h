@@ -32,6 +32,8 @@ class PlayersManager {
         static void ReverseInorderLevelTree(Array<int>& Players, std::shared_ptr<Node<int, std::shared_ptr<Level>>>& root);
         static void InorderPlayerTree(Array<int>& Players, std::shared_ptr<Node<int, std::shared_ptr<Player>>>& root);
         static void InorderGroupTree(Array<int>& array, std::shared_ptr<Node<int, std::shared_ptr<Group>>>& root, int* printed);
+
+        // static int* GetAllPlayersByLevelAux(int num_of_players, AVL<int, std::shared_ptr<Level>>& level_tree);
     public:
         // PlayersManager();
         PMStatusType AddGroup(int groupid);

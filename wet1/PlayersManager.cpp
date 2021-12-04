@@ -247,19 +247,6 @@ PMStatusType PlayersManager::ReplaceGroup(int groupid, int replacementid) { // O
             group_tree.remove(groupid);
             return PM_SUCCESS;
         }
-        // if(g2->size == 0) {
-        //     std::cerr << "before: " << g1.use_count();
-        //     std::shared_ptr<Group> new_group = g1;//std::make_shared<Group>(replacementid);
-        //     std::cerr << " after: " << new_group.use_count() << std::endl;
-        //     new_group->id = replacementid;
-        //     // new_group->max_level_player = g1->max_level_player;
-        //     // new_group->level_tree = g1->level_tree;
-        //     // new_group->size = g1->size;
-        //     group_tree.remove(replacementid);
-        //     group_tree.insert(replacementid, new_group);
-        //     group_tree.remove(groupid);
-        //     return PM_SUCCESS;
-        // }
 
         auto merged_list = AVL<int, std::shared_ptr<Level>>::mergeToList(g1->level_tree, g2->level_tree);
         auto no_duplicates_list = g2->size == 0 ? merged_list : removeDuplicates(merged_list);
@@ -374,7 +361,7 @@ PMStatusType PlayersManager::GetHighestLevel(int groupid, int* playerid) {
 //     if(!players) {
 //         throw std::bad_alloc();
 //     }
-//     ReverseInorderLevelTree(array, level_tree);
+//     ReverseInorderLevelTree(array, level_tree.root);
 //     for(int i=0; i<=array.getSize(); ++i) {
 //         players[i] = array[i];
 //     }
@@ -454,129 +441,3 @@ PMStatusType PlayersManager::GetGroupsHighestLevel(int numOfGroups, int** Player
     }
     return PM_SUCCESS;
 }
-
-// void PrintAll(int *playerIDs, int numOfPlayers) {
-// 	if (numOfPlayers > 0) {
-// 		std::cout << "Rank	||	Player" << std::endl;
-// 	}
-
-// 	for (int i = 0; i < numOfPlayers; i++) {
-// 		std::cout << i + 1 << "\t||\t" << playerIDs[i] << std::endl;
-// 	}
-// 	std::cout << "and there are no more players!" << std::endl;
-
-// 	free (playerIDs);
-// }
-
-// void PrintGroupsHighest(int *playerIDs, int numOfGroups) {
-// 	if (numOfGroups > 0) {
-// 		std::cout << "GroupIndex	||	Player" << std::endl;
-// 	}
-
-// 	for (int i = 0; i < numOfGroups; i++) {
-// 		std::cout << i + 1 << "\t||\t" << playerIDs[i] << std::endl;
-// 	}
-// 	std::cout << "and there are no more players!" << std::endl;
-
-// 	free (playerIDs);
-// }
-
-// int main() {
-//     PlayersManager pm;
-//     assert(pm.AddGroup(2) == PM_SUCCESS);
-//     assert(pm.AddGroup(3) == PM_SUCCESS);
-//     assert(pm.AddGroup(5) == PM_SUCCESS);
-//     assert(pm.AddGroup(1) == PM_SUCCESS);
-//     assert(pm.AddGroup(7) == PM_SUCCESS);
-//     assert(pm.AddGroup(2) == PM_FAILURE);
-//     int numOfPlayers;
-//     int *playerIDs;
-//     assert(pm.GetAllPlayersByLevel(-1, &playerIDs, &numOfPlayers) == PM_SUCCESS);
-//     PrintAll(playerIDs, numOfPlayers);
-//     int* res = new int(0);
-//     assert(pm.GetHighestLevel(-1, res) == PM_SUCCESS);
-//     assert(*res == -1);
-//     assert(pm.AddPlayer(1, 2, 1) == PM_SUCCESS);
-//     assert(pm.AddPlayer(2, 2, 1) == PM_SUCCESS);
-//     assert(pm.AddPlayer(3, 2, 2) == PM_SUCCESS);
-//     assert(pm.AddPlayer(4, 3, 1) == PM_SUCCESS);
-//     assert(pm.AddPlayer(5, 5, 1) == PM_SUCCESS);
-//     assert(pm.AddPlayer(1, 2 ,1) == PM_FAILURE);
-//     assert(pm.AddPlayer(1, 4 ,1) == PM_FAILURE);
-//     assert(pm.AddPlayer(1, 0 ,1) == PM_INVALID_INPUT);
-//     assert(pm.RemovePlayer(1) == PM_SUCCESS);
-//     assert(pm.RemovePlayer(1) == PM_FAILURE);
-//     assert(pm.AddPlayer(1, 2, 1) == PM_SUCCESS);
-//     assert(pm.ReplaceGroup(2, 3) == PM_SUCCESS);
-//     assert(pm.AddGroup(2) == PM_SUCCESS);
-//     assert(pm.AddGroup(3) == PM_FAILURE);
-
-//     assert(pm.AddPlayer(1, 2, 1) == PM_FAILURE);
-//     assert(pm.AddPlayer(4, 2, 1) == PM_FAILURE);
-//     assert(pm.AddPlayer(1, 4, 1) == PM_FAILURE);
-//     assert(pm.AddPlayer(5, 5, 1) == PM_FAILURE);
-
-//     assert(pm.IncreaseLevel(1, 4) == PM_SUCCESS);
-//     assert(pm.IncreaseLevel(5, 7) == PM_SUCCESS);
-//     assert(pm.IncreaseLevel(11, 2) == PM_FAILURE);
-//     assert(pm.IncreaseLevel(3, 1) == PM_SUCCESS);
-//     *res = 0;
-//     assert(pm.GetHighestLevel(-10, res) == PM_SUCCESS);
-//     assert(*res == 5);
-//     assert(pm.RemovePlayer(5) == PM_SUCCESS);
-//     *res = 0;
-//     assert(pm.GetHighestLevel(5, res) == PM_SUCCESS);
-//     assert(*res == -1);
-//     *res = 0;
-//     assert(pm.GetHighestLevel(3, res) == PM_SUCCESS);
-//     assert(*res = 1);
-//     assert(pm.GetHighestLevel(100, res) == PM_FAILURE);
-//     assert(pm.GetHighestLevel(0, res) == PM_INVALID_INPUT);
-//     assert(pm.GetHighestLevel(2, nullptr) == PM_INVALID_INPUT);
-
-//     delete res;
-
-    
-//     assert(pm.GetAllPlayersByLevel(3, &playerIDs, &numOfPlayers) == PM_SUCCESS);
-//     PrintAll(playerIDs, numOfPlayers);
-//     assert(pm.GetAllPlayersByLevel(5, &playerIDs, &numOfPlayers) == PM_SUCCESS);
-//     PrintAll(playerIDs, numOfPlayers);
-//     assert(pm.GetAllPlayersByLevel(11, &playerIDs, &numOfPlayers) == PM_FAILURE);
-//     assert(pm.GetAllPlayersByLevel(3, nullptr, &numOfPlayers) == PM_INVALID_INPUT);
-//     assert(pm.GetAllPlayersByLevel(3, &playerIDs, nullptr) == PM_INVALID_INPUT);
-//     assert(pm.AddPlayer(13, 7, 3) == PM_SUCCESS);
-//     assert(pm.GetAllPlayersByLevel(7, &playerIDs, &numOfPlayers) == PM_SUCCESS);
-//     PrintAll(playerIDs, numOfPlayers);
-
-//     assert(pm.GetAllPlayersByLevel(-1, &playerIDs, &numOfPlayers) == PM_SUCCESS);
-//     PrintAll(playerIDs, numOfPlayers);
-
-//     assert(pm.GetGroupsHighestLevel(1, &playerIDs) == PM_SUCCESS);
-//     PrintGroupsHighest(playerIDs, 1);
-//     assert(pm.GetGroupsHighestLevel(2, &playerIDs) == PM_SUCCESS);
-//     PrintGroupsHighest(playerIDs, 2);
-//     assert(pm.GetGroupsHighestLevel(3, &playerIDs) == PM_FAILURE);
-// }
-// int main() {
-//     PlayersManager pm;
-//     pm.AddGroup(1);
-//     pm.AddPlayer(1, 1, 6);
-//     pm.AddPlayer(2, 1, 4);
-//     // pm.AddPlayer(3, 1, 3);
-//     int highest = -1;
-//     int* players;
-
-//     pm.IncreaseLevel(2, 5);
-//     pm.IncreaseLevel(1, 3);
-
-//     pm.GetHighestLevel(1, &highest);
-//     std::cout << highest << std::endl;
-//     pm.GetGroupsHighestLevel(1, &players);
-//     PrintGroupsHighest(players, 1);
-
-    // pm.IncreaseLevel(1, 1);
-    // pm.GetHighestLevel(1, &highest);
-    // std::cout << highest << std::endl;
-    // pm.GetGroupsHighestLevel(1, &players);
-    // PrintGroupsHighest(players, 1);
-// }
