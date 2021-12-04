@@ -22,8 +22,13 @@ void PlayersManager::AddPlayerToGroupTree(Group& group, std::shared_ptr<Player>&
     (group.level_tree.getInfo(player->level))->player_tree.insert(player->id, player);
     group.size++;
     // max player level maintaince
-    if(player->level > group.max_level_player.level) {
-        group.max_level_player.id = player->id;
+    if(player->level >= group.max_level_player.level) {
+        if(player->level == group.max_level_player.level) {
+            group.max_level_player.id = std::min(player->id, group.max_level_player.id);
+        }
+        else {
+            group.max_level_player.id = player->id;
+        }
         group.max_level_player.level = player->level;
     }
 }
@@ -36,7 +41,7 @@ Array<Node<int, std::shared_ptr<Level>>*> PlayersManager::removeDuplicates(Array
     }
     Array<Node<int, std::shared_ptr<Level>>*> new_list(real_size);
     for(int i=0; i <= size; ++i) {  // O(m+n)
-        if((i < size && list[i]->key != list[i+1]->key) || (i == size && list[i-1]->key != list[i]->key)) {
+        if((i < size && (list[i]->key != list[i+1]->key)) || (i == size && (list[i-1]->key != list[i]->key))) {
             new_list.push_back(list[i]);
         }
         else {
@@ -82,6 +87,36 @@ void PlayersManager::updateMaxLevel(AVL<int, std::shared_ptr<Level>>& level_tree
     std::shared_ptr<Player>& max_player = max_level->player_tree.getMin();  // O(logn)
     max_player_info.id = max_player->id;
     max_player_info.level = max_player->level;
+}
+
+void PlayersManager::InorderGroupTree(Array<int>& array, std::shared_ptr<Node<int, std::shared_ptr<Group>>>& root, int* printed){
+    if(!root || *printed == 0) {
+        return;
+    }
+    InorderGroupTree(array, root->left, printed);
+    if(*printed > 0) {
+        array.push_back(root->info->max_level_player.id);
+        (*printed)--;
+    }
+    InorderGroupTree(array, root->right, printed);
+}
+
+void PlayersManager::InorderPlayerTree(Array<int>& Players, std::shared_ptr<Node<int, std::shared_ptr<Player>>>& root) {
+    if(!root) {
+        return;
+    }
+    InorderPlayerTree(Players, root->left);
+    Players.push_back(root->key);
+    InorderPlayerTree(Players, root->right);
+}
+
+void PlayersManager::ReverseInorderLevelTree(Array<int>& Players, std::shared_ptr<Node<int, std::shared_ptr<Level>>>& root) {
+    if(!root) {
+        return;
+    }
+    ReverseInorderLevelTree(Players, root->right);
+    InorderPlayerTree(Players, root->info->player_tree.root);
+    ReverseInorderLevelTree(Players, root->left);
 }
 /** *******************************************************************************************************************
  *                                             MEMBER FUNCTIONS                                                       *
@@ -200,16 +235,34 @@ PMStatusType PlayersManager::RemovePlayer(int playerid) { // O(logn)
 
 PMStatusType PlayersManager::ReplaceGroup(int groupid, int replacementid) { // O(logk + n + m)
     if(groupid <= 0 || replacementid <= 0 || groupid == replacementid) {
-        return PM_FAILURE;
+        return PM_INVALID_INPUT;
     }
     try {
-        Group *g1 = (group_tree.getInfo(groupid)).get();
-        Group *g2 = (group_tree.getInfo(replacementid)).get();
-        if(g1->level_tree.number_of_nodes == 0)  {  // no players in group
+        std::shared_ptr<Group> g1 = (group_tree.getInfo(groupid));
+        std::shared_ptr<Group> g2 = (group_tree.getInfo(replacementid));
+        // Group* g1 = group_tree.getInfo(groupid).get();
+        // Group* g2 = group_tree.getInfo(replacementid).get();
+
+        if(g1->size == 0)  {  // no players in group
+            group_tree.remove(groupid);
             return PM_SUCCESS;
         }
+        // if(g2->size == 0) {
+        //     std::cerr << "before: " << g1.use_count();
+        //     std::shared_ptr<Group> new_group = g1;//std::make_shared<Group>(replacementid);
+        //     std::cerr << " after: " << new_group.use_count() << std::endl;
+        //     new_group->id = replacementid;
+        //     // new_group->max_level_player = g1->max_level_player;
+        //     // new_group->level_tree = g1->level_tree;
+        //     // new_group->size = g1->size;
+        //     group_tree.remove(replacementid);
+        //     group_tree.insert(replacementid, new_group);
+        //     group_tree.remove(groupid);
+        //     return PM_SUCCESS;
+        // }
+
         auto merged_list = AVL<int, std::shared_ptr<Level>>::mergeToList(g1->level_tree, g2->level_tree);
-        auto no_duplicates_list = removeDuplicates(merged_list);
+        auto no_duplicates_list = g2->size == 0 ? merged_list : removeDuplicates(merged_list);
         AVL<int, std::shared_ptr<Level>> merged = AVL<int, std::shared_ptr<Level>>::listToAVL(no_duplicates_list);
         std::shared_ptr<Node<int, std::shared_ptr<Level>>> root = merged.root;
         std::shared_ptr<Group> new_group = std::make_shared<Group>(replacementid, merged);
@@ -219,7 +272,9 @@ PMStatusType PlayersManager::ReplaceGroup(int groupid, int replacementid) { // O
         group_tree.remove(groupid);
         group_tree.remove(replacementid);
         not_empty_group_tree.remove(groupid);
-        not_empty_group_tree.remove(replacementid);
+        if(g2->size != 0) {
+            not_empty_group_tree.remove(replacementid);
+        }
 
         updateMaxLevel(new_group->level_tree, new_group->max_level_player);
 
@@ -229,6 +284,9 @@ PMStatusType PlayersManager::ReplaceGroup(int groupid, int replacementid) { // O
     }
     catch(const std::bad_alloc& e) {
         return PM_ALLOCATION_ERROR;
+    }
+    catch(const KeyDoesNotExist& e) {
+        return PM_FAILURE;
     }
     return PM_SUCCESS;
 }
@@ -310,24 +368,6 @@ PMStatusType PlayersManager::GetHighestLevel(int groupid, int* playerid) {
     }
 }
 
-void PlayersManager::InorderPlayerTree(Array<int>& Players, std::shared_ptr<Node<int, std::shared_ptr<Player>>>& root) {
-    if(!root) {
-        return;
-    }
-    InorderPlayerTree(Players, root->left);
-    Players.push_back(root->key);
-    InorderPlayerTree(Players, root->right);
-}
-
-void PlayersManager::ReverseInorderLevelTree(Array<int>& Players, std::shared_ptr<Node<int, std::shared_ptr<Level>>>& root) {
-    if(!root) {
-        return;
-    }
-    ReverseInorderLevelTree(Players, root->right);
-    InorderPlayerTree(Players, root->info->player_tree.root);
-    ReverseInorderLevelTree(Players, root->left);
-}
-
 // int* PlayersManager::GetAllPlayersByLevelAux(int num_of_players, AVL<int, std::shared_ptr<Level>>& level_tree) {
 //     Array<int> array(num_of_players);
 //     int* players = (int*)malloc(sizeof(int)*num_of_players);
@@ -389,18 +429,6 @@ PMStatusType PlayersManager::GetAllPlayersByLevel(int groupid, int **Players, in
         return PM_FAILURE;
     }
     return PM_SUCCESS;
-}
-
-void PlayersManager::InorderGroupTree(Array<int>& array, std::shared_ptr<Node<int, std::shared_ptr<Group>>>& root, int* printed){
-    if(!root || *printed == 0) {
-        return;
-    }
-    InorderGroupTree(array, root->left, printed);
-    if(printed > 0) {
-        array.push_back(root->info->max_level_player.id);
-        (*printed)--;
-    }
-    InorderGroupTree(array, root->right, printed);
 }
 
 PMStatusType PlayersManager::GetGroupsHighestLevel(int numOfGroups, int** Players) {
@@ -528,4 +556,27 @@ PMStatusType PlayersManager::GetGroupsHighestLevel(int numOfGroups, int** Player
 //     assert(pm.GetGroupsHighestLevel(2, &playerIDs) == PM_SUCCESS);
 //     PrintGroupsHighest(playerIDs, 2);
 //     assert(pm.GetGroupsHighestLevel(3, &playerIDs) == PM_FAILURE);
+// }
+// int main() {
+//     PlayersManager pm;
+//     pm.AddGroup(1);
+//     pm.AddPlayer(1, 1, 6);
+//     pm.AddPlayer(2, 1, 4);
+//     // pm.AddPlayer(3, 1, 3);
+//     int highest = -1;
+//     int* players;
+
+//     pm.IncreaseLevel(2, 5);
+//     pm.IncreaseLevel(1, 3);
+
+//     pm.GetHighestLevel(1, &highest);
+//     std::cout << highest << std::endl;
+//     pm.GetGroupsHighestLevel(1, &players);
+//     PrintGroupsHighest(players, 1);
+
+    // pm.IncreaseLevel(1, 1);
+    // pm.GetHighestLevel(1, &highest);
+    // std::cout << highest << std::endl;
+    // pm.GetGroupsHighestLevel(1, &players);
+    // PrintGroupsHighest(players, 1);
 // }

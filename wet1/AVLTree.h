@@ -191,7 +191,7 @@ class AVL {
             if(!root->left) {
                 return root->info;
             }
-            return getMaxAux(root->left);
+            return getMinAux(root->left);
         }
 
         static void clear_aux(std::shared_ptr<_Node>& root) {
