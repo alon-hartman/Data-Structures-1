@@ -5,7 +5,7 @@
  *                                      STATIC HELPER FUNCTIONS                                                       *
 ***********************************************************************************************************************/
 
-void PlayersManager::AddPlayerToLevelTree(AVL<int, std::shared_ptr<Level>>& level_tree, std::shared_ptr<Player>& player) {
+void PlayersManager::AddPlayerToLevelTree(AVL<int, std::shared_ptr<Level>>& level_tree, const std::shared_ptr<Player>& player) {
     if(!level_tree.find(player->level)) {
         std::shared_ptr<Level> level = std::make_shared<Level>(player->level);
         level_tree.insert(player->level, level);
@@ -13,7 +13,7 @@ void PlayersManager::AddPlayerToLevelTree(AVL<int, std::shared_ptr<Level>>& leve
     (level_tree.getInfo(player->level))->player_tree.insert(player->id, player);
 }
 
-void PlayersManager::AddPlayerToGroupTree(Group& group, std::shared_ptr<Player>& player) {
+void PlayersManager::AddPlayerToGroupTree(Group& group, const std::shared_ptr<Player>& player) {
     if(!group.level_tree.find(player->level)) {
         // Level* new_level = new Level(player.level);
         std::shared_ptr<Level> new_level = std::make_shared<Level>(player->level);
@@ -24,7 +24,8 @@ void PlayersManager::AddPlayerToGroupTree(Group& group, std::shared_ptr<Player>&
     // max player level maintaince
     if(player->level >= group.max_level_player.level) {
         if(player->level == group.max_level_player.level) {
-            group.max_level_player.id = std::min(player->id, group.max_level_player.id);
+            group.max_level_player.id = (player->id < group.max_level_player.id) ? player->id : group.max_level_player.id;
+            // group.max_level_player.id = std::min(player->id, group.max_level_player.id);  // not allowed to use std::min
         }
         else {
             group.max_level_player.id = player->id;
@@ -33,7 +34,40 @@ void PlayersManager::AddPlayerToGroupTree(Group& group, std::shared_ptr<Player>&
     }
 }
 
-Array<Node<int, std::shared_ptr<Level>>*> PlayersManager::removeDuplicates(Array<Node<int, std::shared_ptr<Level>>*>& list) {
+void PlayersManager::updatePlayersPointers(const std::shared_ptr<Group>& group, const std::shared_ptr<Node<int, std::shared_ptr<Player>>>& root) {
+    if(!root) {
+        return;
+    }
+    Player* player = (root->info).get();
+    player->group = group.get();
+    updatePlayersPointers(group, root->left);
+    updatePlayersPointers(group, root->right);
+}
+void PlayersManager::updateGroupPointers(const std::shared_ptr<Group>& group, const std::shared_ptr<Node<int, std::shared_ptr<Level>>>& root) {
+    if(!root) {
+        return;
+    }
+    AVL<int, std::shared_ptr<Player>>& avl = (root->info)->player_tree;
+    PlayersManager::updatePlayersPointers(group, avl.root);
+    updateGroupPointers(group, root->left);
+    updateGroupPointers(group, root->right);
+}
+
+void PlayersManager::updateMaxLevel(const AVL<int, std::shared_ptr<Level>>& level_tree, MaxPlayerInfo& max_player_info) {
+    if(level_tree.number_of_nodes == 0) {
+        max_player_info.id = -1;
+        max_player_info.level = -1;
+        return;
+    }
+    // if here then there is at least one node, which means the node isn't empty which means the following operations
+    // must succeed (as long as this function is called after removed empty nodes).
+    std::shared_ptr<Level>& max_level = level_tree.getMax();  // O(logn)
+    std::shared_ptr<Player>& max_player = max_level->player_tree.getMin();  // O(logn)
+    max_player_info.id = max_player->id;
+    max_player_info.level = max_player->level;
+}
+
+Array<Node<int, std::shared_ptr<Level>>*> PlayersManager::removeDuplicates(const Array<Node<int, std::shared_ptr<Level>>*>& list) {
     int real_size = 1;
     int size = list.getSize();
     for(int i = 0; i < size; ++i) {  // O(m+n)
@@ -56,40 +90,7 @@ Array<Node<int, std::shared_ptr<Level>>*> PlayersManager::removeDuplicates(Array
     return new_list;
 }
 
-void PlayersManager::updatePlayersPointers(std::shared_ptr<Group>& group, std::shared_ptr<Node<int, std::shared_ptr<Player>>>& root) {
-    if(!root) {
-        return;
-    }
-    Player* player = (root->info).get();
-    player->group = group.get();
-    updatePlayersPointers(group, root->left);
-    updatePlayersPointers(group, root->right);
-}
-void PlayersManager::updateGroupPointers(std::shared_ptr<Group>& group, std::shared_ptr<Node<int, std::shared_ptr<Level>>>& root) {
-    if(!root) {
-        return;
-    }
-    AVL<int, std::shared_ptr<Player>>& avl = (root->info)->player_tree;
-    PlayersManager::updatePlayersPointers(group, avl.root);
-    updateGroupPointers(group, root->left);
-    updateGroupPointers(group, root->right);
-}
-
-void PlayersManager::updateMaxLevel(AVL<int, std::shared_ptr<Level>>& level_tree, MaxPlayerInfo& max_player_info) {
-    if(level_tree.number_of_nodes == 0) {
-        max_player_info.id = -1;
-        max_player_info.level = -1;
-        return;
-    }
-    // if here then there is at least one node, which means the node isn't empty which means the following operations
-    // must succeed (as long as this function is called after removed empty nodes).
-    std::shared_ptr<Level>& max_level = level_tree.getMax();  // O(logn)
-    std::shared_ptr<Player>& max_player = max_level->player_tree.getMin();  // O(logn)
-    max_player_info.id = max_player->id;
-    max_player_info.level = max_player->level;
-}
-
-void PlayersManager::InorderGroupTree(Array<int>& array, std::shared_ptr<Node<int, std::shared_ptr<Group>>>& root, int* printed){
+void PlayersManager::InorderGroupTree(Array<int>& array, const std::shared_ptr<Node<int, std::shared_ptr<Group>>>& root, int* printed){
     if(!root || *printed == 0) {
         return;
     }
@@ -101,7 +102,7 @@ void PlayersManager::InorderGroupTree(Array<int>& array, std::shared_ptr<Node<in
     InorderGroupTree(array, root->right, printed);
 }
 
-void PlayersManager::InorderPlayerTree(Array<int>& Players, std::shared_ptr<Node<int, std::shared_ptr<Player>>>& root) {
+void PlayersManager::InorderPlayerTree(Array<int>& Players, const std::shared_ptr<Node<int, std::shared_ptr<Player>>>& root) {
     if(!root) {
         return;
     }
@@ -110,7 +111,7 @@ void PlayersManager::InorderPlayerTree(Array<int>& Players, std::shared_ptr<Node
     InorderPlayerTree(Players, root->right);
 }
 
-void PlayersManager::ReverseInorderLevelTree(Array<int>& Players, std::shared_ptr<Node<int, std::shared_ptr<Level>>>& root) {
+void PlayersManager::ReverseInorderLevelTree(Array<int>& Players, const std::shared_ptr<Node<int, std::shared_ptr<Level>>>& root) {
     if(!root) {
         return;
     }
@@ -167,7 +168,8 @@ PMStatusType PlayersManager::AddPlayer(const int playerid, const int groupid, co
         // maintaince max level in all players
         if(level >= max_level_player.level) {
             if(level == max_level_player.level) {
-                max_level_player.id = std::min(playerid, max_level_player.id);
+                max_level_player.id = (playerid < max_level_player.id) ? playerid : max_level_player.id;
+                // max_level_player.id = std::min(playerid, max_level_player.id);  // not allowed to use std::min
             }
             else {
                 max_level_player.id = playerid;
@@ -316,7 +318,8 @@ PMStatusType PlayersManager::IncreaseLevel(int playerid, int levelincrease) { //
         
         if(player->level >= this->max_level_player.level) {
             if(player->level == this->max_level_player.level) {
-                this->max_level_player.id = std::min(player->id, max_level_player.id);
+                this->max_level_player.id = (player->id < max_level_player.id) ? player->id : max_level_player.id;
+                // this->max_level_player.id = std::min(player->id, max_level_player.id);  // not allowed to use std::min
             }
             else {
                 this->max_level_player.id = player->id;
@@ -335,7 +338,7 @@ PMStatusType PlayersManager::IncreaseLevel(int playerid, int levelincrease) { //
     return PM_SUCCESS;
 }
 
-PMStatusType PlayersManager::GetHighestLevel(int groupid, int* playerid) {
+PMStatusType PlayersManager::GetHighestLevel(int groupid, int* playerid) const {
     if(groupid == 0 || playerid == nullptr) {
         return PM_INVALID_INPUT;
     }
@@ -366,7 +369,7 @@ PMStatusType PlayersManager::GetHighestLevel(int groupid, int* playerid) {
 //     return players;
 // }
 
-PMStatusType PlayersManager::GetAllPlayersByLevel(int groupid, int **Players, int *numOfPlayers) {
+PMStatusType PlayersManager::GetAllPlayersByLevel(int groupid, int **Players, int *numOfPlayers) const {
     if(groupid == 0 || Players == nullptr || numOfPlayers == nullptr) {
         return PM_INVALID_INPUT;
     }
@@ -416,7 +419,7 @@ PMStatusType PlayersManager::GetAllPlayersByLevel(int groupid, int **Players, in
     return PM_SUCCESS;
 }
 
-PMStatusType PlayersManager::GetGroupsHighestLevel(int numOfGroups, int** Players) {
+PMStatusType PlayersManager::GetGroupsHighestLevel(int numOfGroups, int** Players) const {
     if(numOfGroups < 1 || Players == nullptr) {
         return PM_INVALID_INPUT;
     }

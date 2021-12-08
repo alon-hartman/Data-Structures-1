@@ -43,22 +43,28 @@ template<class Key, class Info>
 class AVL {
     typedef Node<Key, Info> _Node;
     private:
-        static int height(std::shared_ptr<_Node>& root) {
+        /*     Helper Function     */
+        // since we can't use std::max
+        static inline int max(const int a, const int b) {
+            return (a > b) ? a : b;
+        }
+ 
+        static int height(const std::shared_ptr<_Node>& root) {
             if(!root) {
                 return -1;
             }
             return root->height;
         }
 
-        static int get_balance_factor(std::shared_ptr<_Node>& root) {
+        static int get_balance_factor(const std::shared_ptr<_Node>& root) {
             return height(root->left) - height(root->right);
         }
 
         static void RR_rotation(std::shared_ptr<_Node>& parent) {
             std::shared_ptr<_Node> child = parent->right;
             parent->right = child->left;
-            parent->height = 1 + std::max(height(parent->left), height(parent->right));
-            child->height = 1 + std::max(height(child->right), height(parent));
+            parent->height = 1 + max(height(parent->left), height(parent->right));
+            child->height = 1 + max(height(child->right), height(parent));
             child->left = parent;
             parent = child;
         }
@@ -72,8 +78,8 @@ class AVL {
             std::shared_ptr<_Node> tmp = child->right;
             child->right = parent;
             parent->left = tmp;
-            parent->height = 1 + std::max(height(parent->left), height(parent->right));
-            child->height = 1 + std::max(height(child->left), height(child->right));
+            parent->height = 1 + max(height(parent->left), height(parent->right));
+            child->height = 1 + max(height(child->left), height(child->right));
             parent = child;
         }
         static void LR_rotation(std::shared_ptr<_Node>& parent) {
@@ -105,7 +111,7 @@ class AVL {
             }
         }
 
-        static std::shared_ptr<_Node>& find_aux(std::shared_ptr<_Node>& root, const Key& key) {
+        static const std::shared_ptr<_Node>& find_aux(const std::shared_ptr<_Node>& root, const Key& key) {
             if(!root || key == root->key) {
                 return root;
             }
@@ -117,7 +123,7 @@ class AVL {
             }
         }
 
-        static void insert_aux(std::shared_ptr<_Node>& root, const Key& key, Info info) {
+        static void insert_aux(std::shared_ptr<_Node>& root, const Key& key, const Info& info) {
             if(!root) {
                 root = std::make_shared<_Node>(key, info);
                 return;
@@ -129,7 +135,7 @@ class AVL {
                 insert_aux(root->right, key, info);
             }
             balance_aux(root);
-            root->height = 1 + std::max(height(root->left), height(root->right));
+            root->height = 1 + max(height(root->left), height(root->right));
         }
 
         static void remove_aux(std::shared_ptr<_Node>& root, Key key) {
@@ -138,11 +144,11 @@ class AVL {
             }
             if(key < root->key) {
                 remove_aux(root->left, key);
-                root->height = 1 + std::max(height(root->left), height(root->right));
+                root->height = 1 + max(height(root->left), height(root->right));
             }
             else if(root->key < key) {
                 remove_aux(root->right, key);
-                root->height = 1 + std::max(height(root->left), height(root->right));
+                root->height = 1 + max(height(root->left), height(root->right));
             }
             else {  // key == root->key
                 // root is a leaf
@@ -171,13 +177,13 @@ class AVL {
             balance_aux(root);
         }
 
-        static Info& getMaxAux(std::shared_ptr<_Node>& root) {
+        static Info& getMaxAux(const std::shared_ptr<_Node>& root) {
             if(!root->right) {
                 return root->info;
             }
             return getMaxAux(root->right);
         }
-        static Info& getMinAux(std::shared_ptr<_Node>& root) {
+        static Info& getMinAux(const std::shared_ptr<_Node>& root) {
             if(!root->left) {
                 return root->info;
             }
@@ -204,7 +210,7 @@ class AVL {
         }
 
         /* merge helper functions */
-        static void inorderToList(std::shared_ptr<_Node>& root, Array<_Node*>& list) {
+        static void inorderToList(const std::shared_ptr<_Node>& root, Array<_Node*>& list) {
             if(!root) {
                 return;
             }
@@ -212,7 +218,7 @@ class AVL {
             list.push_back(root.get());
             inorderToList(root->right, list);
         }
-        Array<_Node*> getTreeAsList() {
+        Array<_Node*> getTreeAsList() const {
             Array<_Node*> list(number_of_nodes);
             inorderToList(root, list);  // O(n)
             return list; 
@@ -228,18 +234,17 @@ class AVL {
          * no need for rotations and searching, each node get assinged a value such that there are balanced number
          * of nodes from each side, using a proccess similliar to binary search.
         */
-        static std::shared_ptr<_Node> getTreeFromListAux(Array<_Node*>& list, int start, int end) {
+        static std::shared_ptr<_Node> getTreeFromListAux(const Array<_Node*>& list, int start, int end) {
             if(start > end) {
                 return nullptr;
             }
             int mid = (start+end)/2;
-            std::shared_ptr<_Node> root;
-            root = std::make_shared<_Node>(list[mid]->key, list[mid]->info);
+            std::shared_ptr<_Node>root = std::make_shared<_Node>(list[mid]->key, list[mid]->info);
             root->left = getTreeFromListAux(list, start, mid-1);
             root->right = getTreeFromListAux(list, mid+1, end);
             return root;
         }
-        static AVL getTreeFromList(Array<_Node*>& list) {
+        static AVL getTreeFromList(const Array<_Node*>& list) {
             AVL avl;
             avl.root = getTreeFromListAux(list, 0, list.getSize());
             avl.number_of_nodes = list.getSize()+1;
@@ -267,13 +272,15 @@ class AVL {
             this->number_of_nodes = other.number_of_nodes;
             return *this;
         }
-        void copyRoot(const AVL& from) {
+        void copyRoot(const AVL& from) const {
             root = from.root;
         }
-        std::shared_ptr<_Node>& find(const Key& key) {
+
+        const std::shared_ptr<_Node>& find(const Key& key) const {
             return find_aux(root, key);
         }
-        Info& getInfo(const Key& key) {
+
+        Info& getInfo(const Key& key) const {
             std::shared_ptr<_Node> node = find(key);
             if(!node) {
                 throw KeyDoesNotExist();
@@ -281,7 +288,7 @@ class AVL {
             return node->info;
         }
 
-        void insert(const Key& key, Info& info) {
+        void insert(const Key& key, const Info& info) {
             if(find(key)) {
                 throw KeyAlreadyExists();
             }
@@ -296,13 +303,13 @@ class AVL {
             number_of_nodes--;
         }
 
-        Info& getMax() {
+        Info& getMax() const {
             if(!root) {
                 throw EmptyTree();
             }
             return getMaxAux(root);
         }
-        Info& getMin() {
+        Info& getMin() const {
             if(!root) {
                 throw EmptyTree();
             }
@@ -313,7 +320,7 @@ class AVL {
             clear_aux(root);
         }
 
-        int get_tree_height() {
+        int get_tree_height() const {
             return height(root);
         }
 
@@ -354,7 +361,7 @@ class AVL {
         //     std::cout << std::endl;
         // }
 
-        static Array<_Node*> mergeToList(AVL& avl1, AVL& avl2) {
+        static Array<_Node*> mergeToList(const AVL& avl1, const AVL& avl2) {
             NodesComparator cmp;
             Array<_Node*> list1 = avl1.getTreeAsList();  // O(n)
             Array<_Node*> list2 = avl2.getTreeAsList();  // O(m)
@@ -362,12 +369,12 @@ class AVL {
             return merged_list;
         }
 
-        static AVL listToAVL(Array<_Node*>& list) {
+        static AVL listToAVL(const Array<_Node*>& list) {
             AVL avl = getTreeFromList(list);  // O(n+m)
             return avl;
             // counting copying and destructing lists and trees (if performed), the overall complexity is still O(n+m)
         }
-        static AVL merge(AVL& avl1, AVL& avl2) {
+        static AVL merge(const AVL& avl1, const AVL& avl2) {
             Array<_Node*> merged_list = mergeToList(avl1, avl2);
             return listToAVL(merged_list);
         }

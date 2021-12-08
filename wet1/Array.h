@@ -45,7 +45,7 @@ class Array {
                 data[i] = other[i];
             }
         }
-        int getSize() {
+        int getSize() const {
             return size-1;
         }
         T* getData() {
@@ -77,7 +77,7 @@ class Array {
         }
 
         template<class Compare = std::less<T>>
-        static Array merge(Array& list1, Array& list2, Compare cmp) {
+        static Array merge(const Array& list1, const Array& list2, Compare cmp) {
             // only merges initiallized parts
             Array merged(list1.next_empty + list2.next_empty);
             int i=0, j=0;

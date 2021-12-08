@@ -21,17 +21,17 @@ class PlayersManager {
         AVL<int, std::shared_ptr<Level>> level_tree;
         MaxPlayerInfo max_level_player;
 
-        static void AddPlayerToLevelTree(AVL<int, std::shared_ptr<Level>>& level_tree, std::shared_ptr<Player>& player);
-        static void AddPlayerToGroupTree(Group& group, std::shared_ptr<Player>& player);
-        static void updatePlayersPointers(std::shared_ptr<Group>& group, std::shared_ptr<Node<int, std::shared_ptr<Player>>>& root);
-        static void updateGroupPointers(std::shared_ptr<Group>& group, std::shared_ptr<Node<int, std::shared_ptr<Level>>>& root);
-        static void updateMaxLevel(AVL<int, std::shared_ptr<Level>>& level_tree, MaxPlayerInfo& max_player_info);
+        static void AddPlayerToLevelTree(AVL<int, std::shared_ptr<Level>>& level_tree, const std::shared_ptr<Player>& player);
+        static void AddPlayerToGroupTree(Group& group, const std::shared_ptr<Player>& player);
+        static void updatePlayersPointers(const std::shared_ptr<Group>& group, const std::shared_ptr<Node<int, std::shared_ptr<Player>>>& root);
+        static void updateGroupPointers(const std::shared_ptr<Group>& group, const std::shared_ptr<Node<int, std::shared_ptr<Level>>>& root);
+        static void updateMaxLevel(const AVL<int, std::shared_ptr<Level>>& level_tree, MaxPlayerInfo& max_player_info);
 
-        static Array<Node<int, std::shared_ptr<Level>>*> removeDuplicates(Array<Node<int, std::shared_ptr<Level>>*>& list);
+        static Array<Node<int, std::shared_ptr<Level>>*> removeDuplicates(const Array<Node<int, std::shared_ptr<Level>>*>& list);
 
-        static void ReverseInorderLevelTree(Array<int>& Players, std::shared_ptr<Node<int, std::shared_ptr<Level>>>& root);
-        static void InorderPlayerTree(Array<int>& Players, std::shared_ptr<Node<int, std::shared_ptr<Player>>>& root);
-        static void InorderGroupTree(Array<int>& array, std::shared_ptr<Node<int, std::shared_ptr<Group>>>& root, int* printed);
+        static void InorderGroupTree(Array<int>& array, const std::shared_ptr<Node<int, std::shared_ptr<Group>>>& root, int* printed);
+        static void InorderPlayerTree(Array<int>& Players, const std::shared_ptr<Node<int, std::shared_ptr<Player>>>& root);
+        static void ReverseInorderLevelTree(Array<int>& Players, const std::shared_ptr<Node<int, std::shared_ptr<Level>>>& root);
 
         // static int* GetAllPlayersByLevelAux(int num_of_players, AVL<int, std::shared_ptr<Level>>& level_tree);
     public:
@@ -41,9 +41,9 @@ class PlayersManager {
         PMStatusType RemovePlayer(int playerid);
         PMStatusType ReplaceGroup(int groupid, int replacementid);
         PMStatusType IncreaseLevel(int playerid, int levelincrease);
-        PMStatusType GetHighestLevel(int groupid, int* playerid);
-        PMStatusType GetAllPlayersByLevel(int groupid, int **Players, int *numOfPlayers);
-        PMStatusType GetGroupsHighestLevel(int numOfGroups, int** Players);
+        PMStatusType GetHighestLevel(int groupid, int* playerid) const;
+        PMStatusType GetAllPlayersByLevel(int groupid, int **Players, int *numOfPlayers) const;
+        PMStatusType GetGroupsHighestLevel(int numOfGroups, int** Players) const;
 };
 
 #endif
