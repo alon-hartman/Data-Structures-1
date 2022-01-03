@@ -85,14 +85,14 @@ class LinkedList {
 
 class DHT {
     private:
-        int size;
-        int number_of_players;
         LinkedList* players;
         
         int hashFunction(int i, int m) {
-            return i % m;
+            return (i>=0 ) ? i % m : m + i%m;
         }
     public:
+        int size;
+        int number_of_players;
         DHT(int size=2) : size(size), number_of_players(0), players(new LinkedList[size]) { }
 
         ~DHT() {
@@ -103,7 +103,7 @@ class DHT {
             return size;
         }
 
-        void addPlayer(std::shared_ptr<Player> player) {
+        void addPlayer(const std::shared_ptr<Player>& player) {
             if(findPlayer(player->playerID) != nullptr)
             {
                 throw PlayerAlreadyExists();
