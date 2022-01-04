@@ -2,6 +2,7 @@
 #define RANKTREE_H
 #include "DynamicHashTable.h"
 #include "Player.h"
+#include "Array.h"
 #include <memory>
 
 const int MAX_SCORE = 200;
@@ -19,6 +20,9 @@ struct TreeNode {
     TreeNode(int level=0) : 
         level_id(level), height(0), players_in_level(), average_level_in_subtree(0),
         scores_hist(new int[MAX_SCORE]{0}), players_in_subtree(0), left(nullptr), right(nullptr) { }
+    // TreeNode(int level=0, ) : 
+    //     level_id(level), height(0), players_in_level(), average_level_in_subtree(0),
+    //     scores_hist(new int[MAX_SCORE]{0}), players_in_subtree(0), left(nullptr), right(nullptr) { }
     ~TreeNode() {
         delete[] scores_hist;
         left = nullptr;
@@ -69,9 +73,9 @@ class RankTree {
         static int max(const int a, const int b);
         static int height(const std::shared_ptr<TreeNode>& root);
         static int get_balance_factor(const std::shared_ptr<TreeNode>& root);
-        static void decrease_counts(std::shared_ptr<TreeNode>& A, std::shared_ptr<TreeNode>& B);
+        static void decrease_counts(const std::shared_ptr<TreeNode>& A, const std::shared_ptr<TreeNode>& B);
         static void decrease_counts(int* A, int* B);
-        static void increase_counts(std::shared_ptr<TreeNode>& A, std::shared_ptr<TreeNode>& B);
+        static void increase_counts(const std::shared_ptr<TreeNode>& A, const std::shared_ptr<TreeNode>& B);
         static void increase_counts(int* A, int* B);
         static double sumOfLevelsInSubtree(std::shared_ptr<TreeNode>& root);
         static int getPlayersInSubtree(std::shared_ptr<TreeNode>& root);
@@ -88,6 +92,16 @@ class RankTree {
         static void remove_level_aux(std::shared_ptr<TreeNode>& root, const int level_id);
         static void remove_level_and_fix_hist_aux(std::shared_ptr<TreeNode>& root, const int level_id, int* hist);
 
+        static void inorderToList(const std::shared_ptr<TreeNode>& root, Array<std::shared_ptr<TreeNode>>& list);
+        Array<std::shared_ptr<TreeNode>> getTreeAsList() const;
+        static std::shared_ptr<TreeNode> getTreeFromListAux(const Array<std::shared_ptr<TreeNode>>& list, int start, int end);
+        static RankTree getTreeFromList(const Array<std::shared_ptr<TreeNode>>& list);
+        static Array<std::shared_ptr<TreeNode>> mergeToList(const RankTree& av1, const RankTree& avl2);
+        static Array<std::shared_ptr<TreeNode>> removeDuplicates(const Array<std::shared_ptr<TreeNode>>& list);
+        static RankTree listToRankTree(const Array<std::shared_ptr<TreeNode>>& list);
+        static void updateMergedTree(std::shared_ptr<TreeNode>& root);
+        static void resetHistogram(int* histogram);
+
     public:
         std::shared_ptr<TreeNode> root;
         int number_of_levels = 1;
@@ -95,6 +109,7 @@ class RankTree {
         const std::shared_ptr<TreeNode>& find(const int level_id) const;
         void insert(std::shared_ptr<Player>& player);
         void removePlayer(std::shared_ptr<Player>& player);
+        static RankTree merge(const RankTree& rt1, const RankTree& rt2);
         RankTree();
 };
 

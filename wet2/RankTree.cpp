@@ -1,4 +1,5 @@
 #include "RankTree.h"
+#include "Array.h"
 
 int RankTree::max(const int a, const int b) {
     return (a > b) ? a : b;
@@ -15,7 +16,7 @@ int RankTree::get_balance_factor(const std::shared_ptr<TreeNode>& root) {
     return height(root->left) - height(root->right);
 }
 
-void RankTree::decrease_counts(std::shared_ptr<TreeNode>& A, std::shared_ptr<TreeNode>& B) {
+void RankTree::decrease_counts(const std::shared_ptr<TreeNode>& A, const std::shared_ptr<TreeNode>& B) {
     // A-B
     if(!A || !B) {
         return;
@@ -25,7 +26,7 @@ void RankTree::decrease_counts(std::shared_ptr<TreeNode>& A, std::shared_ptr<Tre
     }
 }
 
-void RankTree::increase_counts(std::shared_ptr<TreeNode>& A, std::shared_ptr<TreeNode>& B) {
+void RankTree::increase_counts(const std::shared_ptr<TreeNode>& A, const std::shared_ptr<TreeNode>& B) {
     // A+B
     if(!A || !B) {
         return;
@@ -294,6 +295,127 @@ void RankTree::remove_level_and_fix_hist_aux(std::shared_ptr<TreeNode>& root, co
     decrease_counts(root->scores_hist, hist);
 }
 
+/********************************** MERGE FUNCTUINS **********************************/
+void RankTree::inorderToList(const std::shared_ptr<TreeNode>& root, Array<std::shared_ptr<TreeNode>>& list) {
+    if(!root) {
+        return;
+    }
+    inorderToList(root->left, list);
+    list.push_back(root);
+    inorderToList(root->right, list);
+}
+Array<std::shared_ptr<TreeNode>> RankTree::getTreeAsList() const {
+    Array<std::shared_ptr<TreeNode>> list(number_of_levels);
+    inorderToList(root, list);  // O(n)
+    return list; 
+}
+class NodesComparator {
+    public:
+        bool operator()(std::shared_ptr<TreeNode> left, std::shared_ptr<TreeNode> right) {
+            return left->level_id < right->level_id;
+        }
+};
+
+std::shared_ptr<TreeNode> RankTree::getTreeFromListAux(const Array<std::shared_ptr<TreeNode>>& list, int start, int end) {
+    if(start > end) {
+        return nullptr;
+    }
+    int mid = (start+end)/2;
+    std::shared_ptr<TreeNode> root = list[mid];
+    // decrease_counts(root, root->left);
+    // decrease_counts(root, root->right);
+    root->left = getTreeFromListAux(list, start, mid-1);
+    root->right = getTreeFromListAux(list, mid+1, end);
+    // increase_counts(root, root->left);
+    // increase_counts(root, root->right);
+    return root;
+}
+
+RankTree RankTree::getTreeFromList(const Array<std::shared_ptr<TreeNode>>& list) {
+    RankTree rt;
+    rt.root = getTreeFromListAux(list, 0, list.getSize());
+    rt.number_of_levels = list.getSize()+1;
+    return rt;
+}
+
+Array<std::shared_ptr<TreeNode>> RankTree::mergeToList(const RankTree& rt1, const RankTree& rt2) {
+    NodesComparator cmp;
+    Array<std::shared_ptr<TreeNode>> list1 = rt1.getTreeAsList();  // O(n)
+    Array<std::shared_ptr<TreeNode>> list2 = rt2.getTreeAsList();  // O(m)
+    Array<std::shared_ptr<TreeNode>> merged_list = Array<std::shared_ptr<TreeNode>>::merge(list1, list2, cmp);  // O(n+m)
+    Array<std::shared_ptr<TreeNode>> merged_list_no_duplicates = removeDuplicates(merged_list);
+    return merged_list_no_duplicates;
+}
+
+Array<std::shared_ptr<TreeNode>> RankTree::removeDuplicates(const Array<std::shared_ptr<TreeNode>>& list) {
+    int real_size = 1;
+    int size = list.getSize();
+    for(int i = 0; i < size; ++i) {  // O(m+n)
+        real_size += list[i]->level_id != list[i+1]->level_id;
+    }
+    Array<std::shared_ptr<TreeNode>> new_list(real_size);
+    for(int i=0; i <= size; ++i) {  // O(m+n)
+        if((i < size && (list[i]->level_id != list[i+1]->level_id)) || (i == size && (list[i-1]->level_id != list[i]->level_id))) {
+            new_list.push_back(list[i]);
+        }
+        else {
+            // list[i] <-> list[i+1]
+            if(list[i]->players_in_level.number_of_players > list[i+1]->players_in_level.number_of_players) {
+                list[i]->players_in_level.merge(list[i+1]->players_in_level);
+                // decrease_counts(list[i+1], list[i+1]->left);
+                // decrease_counts(list[i+1], list[i+1]->right);
+                // increase_counts(list[i], list[i+1]);
+                new_list.push_back(list[i]);
+            }
+            else {
+                list[i+1]->players_in_level.merge(list[i]->players_in_level);
+                // decrease_counts(list[i], list[i]->left);
+                // decrease_counts(list[i], list[i]->right);
+                // increase_counts(list[i+1], list[i]);
+                new_list.push_back(list[i+1]);
+            }
+            i++;
+        }
+    }
+    return new_list;
+}
+
+void RankTree::resetHistogram(int* histogram) {  // O(1)
+    for (int i = 0; i < MAX_SCORE; i++) {
+        histogram[i] = 0;
+    }
+}
+
+void RankTree::updateMergedTree(std::shared_ptr<TreeNode>& root) {
+    if(!root) {
+        return;
+    }
+    updateMergedTree(root->left);
+    updateMergedTree(root->right);
+    resetHistogram(root->scores_hist);
+    for (int i = 0; i < root->players_in_level.getSize(); i++) {
+        Node* iterator = root->players_in_level.getPlayer(i);   
+        while(iterator) {
+            root->scores_hist[iterator->data->score]++;
+            iterator = iterator->next;
+        }
+    }
+    increase_counts(root, root->left);
+    increase_counts(root, root->right);
+    recalculate_average(root);
+}
+
+RankTree RankTree::listToRankTree(const Array<std::shared_ptr<TreeNode>>& list) {
+    RankTree avl = getTreeFromList(list);  // O(n+m)
+    return avl;
+    // counting copying and destructing lists and trees (if performed), the overall complexity is still O(n+m)
+}
+RankTree RankTree::merge(const RankTree& rt1, const RankTree& rt2) {
+    Array<std::shared_ptr<TreeNode>> merged_list = mergeToList(rt1, rt2);
+    RankTree res = listToRankTree(merged_list);
+    updateMergedTree(res.root);
+    return res;
+}
 /************************************** PUBLIC MEMBER FUNCTUINS **************************************/
 
 RankTree::RankTree() : root(std::make_shared<TreeNode>(0)), number_of_levels(1), level_zero(root) { }

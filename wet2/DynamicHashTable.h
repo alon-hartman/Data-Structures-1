@@ -33,54 +33,54 @@ struct Node {
     }
 };
 
-class LinkedList {
-    public:
-        int size;
-        Node* head;
-        LinkedList() : size(0), head(nullptr) { };
-        ~LinkedList() {
-            delete head;
-        }
-        void insert(std::shared_ptr<Player> player) {
-            Node* new_node = new Node(player, head);
-            head = new_node;
-            size++;
-        }
-        void remove(std::shared_ptr<Player> player) {
-            if(head == nullptr) {
-                throw PlayerDoesntExists();
-            };
-            if(player->playerID == head->data->playerID) {
-                // remove from top of list
-                Node* garbage = head;
-                head = head->next;
-                delete garbage;
-                size--;
-                return;
-            }
-            Node* temp = head;
-            while(temp->next != nullptr && temp->next->data->playerID != player->playerID) {
-                temp = temp->next;
-            }
-            Node* garbage = temp->next;
-            if(garbage == nullptr) {
-                throw PlayerDoesntExists();
-            };
-            temp->next = garbage->next;
+// struct for simplicity
+struct LinkedList {
+    int size;
+    Node* head;
+    LinkedList() : size(0), head(nullptr) { };
+    ~LinkedList() {
+        delete head;
+    }
+    void insert(std::shared_ptr<Player> player) {
+        Node* new_node = new Node(player, head);
+        head = new_node;
+        size++;
+    }
+    void remove(std::shared_ptr<Player> player) {
+        if(head == nullptr) {
+            throw PlayerDoesntExists();
+        };
+        if(player->playerID == head->data->playerID) {
+            // remove from top of list
+            Node* garbage = head;
+            head = head->next;
             delete garbage;
             size--;
+            return;
         }
-        std::shared_ptr<Player> findPlayer(int PlayerID)
-        {
-            Node* iterator = head;
-            while(iterator != nullptr && iterator->data->playerID != PlayerID) {
-                iterator = iterator->next;
-            }
-            if(iterator != nullptr) {
-                return iterator->data;
-            }
-            return nullptr;
+        Node* temp = head;
+        while(temp->next != nullptr && temp->next->data->playerID != player->playerID) {
+            temp = temp->next;
         }
+        Node* garbage = temp->next;
+        if(garbage == nullptr) {
+            throw PlayerDoesntExists();
+        };
+        temp->next = garbage->next;
+        delete garbage;
+        size--;
+    }
+    std::shared_ptr<Player> findPlayer(int PlayerID)
+    {
+        Node* iterator = head;
+        while(iterator != nullptr && iterator->data->playerID != PlayerID) {
+            iterator = iterator->next;
+        }
+        if(iterator != nullptr) {
+            return iterator->data;
+        }
+        return nullptr;
+    }
 };
 
 class DHT {
@@ -124,6 +124,13 @@ class DHT {
 
         int getSize() {
             return size;
+        }
+
+        Node* getPlayer(int i) {
+            if(i<size && i>=0) {
+                return players[i].head;
+            }
+            return nullptr;
         }
 
         void addPlayer(const std::shared_ptr<Player>& player) {
@@ -183,6 +190,16 @@ class DHT {
                 }
              }
              return merged;
+         }
+
+         void merge(DHT& other) {
+             for(int i=0; i<other.size; ++i) {
+                 Node* iterator = other.players[i].head;
+                 while(iterator) {
+                    this->addPlayer(iterator->data);
+                    iterator = iterator->next;
+                 }
+             }
          }
 };
 
