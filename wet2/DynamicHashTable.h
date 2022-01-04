@@ -99,6 +99,29 @@ class DHT {
             delete[] players;
         }
 
+        DHT& operator=(const DHT& other) {
+            if(this == &other) {
+                return *this;
+            }
+            delete[] players;
+            this->players = other.players;
+            this->size = other.size;
+            this->number_of_players = other.number_of_players;
+        }
+
+        void swap(DHT& other) {
+            LinkedList* temp = players;
+            players = other.players;
+            other.players = temp;
+            int _temp = size;
+            size = other.size;
+            other.size = _temp;
+            _temp = number_of_players;
+            number_of_players = other.number_of_players;
+            other.number_of_players = _temp;
+
+        }
+
         int getSize() {
             return size;
         }

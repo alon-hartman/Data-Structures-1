@@ -24,6 +24,44 @@ struct TreeNode {
         left = nullptr;
         right = nullptr;
     }
+    void swap_data(TreeNode& other) {
+        // could implement a generic swap but
+        int temp = level_id;
+        level_id = other.level_id;
+        other.level_id = temp;
+
+        temp = height;
+        height = other.height;
+        other.height = temp;
+
+        players_in_level.swap(other.players_in_level);
+        int* _temp = scores_hist;
+        scores_hist = other.scores_hist;
+        other.scores_hist = _temp;
+
+        temp = players_in_subtree;
+        players_in_subtree = other.players_in_subtree;
+        other.players_in_subtree = temp;
+
+        temp = average_level_in_subtree;
+        average_level_in_subtree = other.average_level_in_subtree;
+        other.average_level_in_subtree = temp;
+    }
+    TreeNode& operator=(const TreeNode& other) {
+        if(this == &other) {
+            return *this;
+        }
+        this->level_id = other.level_id;
+        this->height = other.height;
+        this->players_in_level = other.players_in_level;
+        delete[] this->scores_hist;
+        this->scores_hist = other.scores_hist;
+        this->players_in_subtree = other.players_in_subtree;
+        this->average_level_in_subtree = other.average_level_in_subtree;
+        this->left = other.left;
+        this->right = other.right;
+        return *this;
+    }
 };
 
 class RankTree {
@@ -32,7 +70,9 @@ class RankTree {
         static int height(const std::shared_ptr<TreeNode>& root);
         static int get_balance_factor(const std::shared_ptr<TreeNode>& root);
         static void decrease_counts(std::shared_ptr<TreeNode>& A, std::shared_ptr<TreeNode>& B);
+        static void decrease_counts(int* A, int* B);
         static void increase_counts(std::shared_ptr<TreeNode>& A, std::shared_ptr<TreeNode>& B);
+        static void increase_counts(int* A, int* B);
         static double sumOfLevelsInSubtree(std::shared_ptr<TreeNode>& root);
         static int getPlayersInSubtree(std::shared_ptr<TreeNode>& root);
         static void recalculate_average(std::shared_ptr<TreeNode>& root);
@@ -44,13 +84,17 @@ class RankTree {
         static const std::shared_ptr<TreeNode>& find_aux(const std::shared_ptr<TreeNode>& root, const int level_id);
         static void insert_level_aux(std::shared_ptr<TreeNode>& root, const int level_id, const std::shared_ptr<Player>& player);
         static void insert_player_aux(std::shared_ptr<TreeNode>& root, const int level_id, const std::shared_ptr<Player>& player);
+        static void remove_player_aux(std::shared_ptr<TreeNode>& root, std::shared_ptr<Player>& player);
+        static void remove_level_aux(std::shared_ptr<TreeNode>& root, const int level_id);
+        static void remove_level_and_fix_hist_aux(std::shared_ptr<TreeNode>& root, const int level_id, int* hist);
 
     public:
         std::shared_ptr<TreeNode> root;
         int number_of_levels = 1;
         std::shared_ptr<TreeNode> level_zero;
         const std::shared_ptr<TreeNode>& find(const int level_id) const;
-        void insert(std::shared_ptr<Player> player);
+        void insert(std::shared_ptr<Player>& player);
+        void removePlayer(std::shared_ptr<Player>& player);
         RankTree();
 };
 
