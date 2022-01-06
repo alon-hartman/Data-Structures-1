@@ -76,12 +76,13 @@ class RankTree {
         static void LL_rotation(std::shared_ptr<TreeNode>& parent);
         static void LR_rotation(std::shared_ptr<TreeNode>& parent);
         static void balance_aux(std::shared_ptr<TreeNode>& root);
-        static const std::shared_ptr<TreeNode>& find_aux(const std::shared_ptr<TreeNode>& root, const int level_id);
+        static const std::shared_ptr<TreeNode>& find_level_aux(const std::shared_ptr<TreeNode>& root, const int level_id);
         static void insert_level_aux(std::shared_ptr<TreeNode>& root, const int level_id, const std::shared_ptr<Player>& player, int scale);
         static void insert_player_aux(std::shared_ptr<TreeNode>& root, const int level_id, const std::shared_ptr<Player>& player);
         static void remove_player_aux(std::shared_ptr<TreeNode>& root, std::shared_ptr<Player>& player);
         static void remove_level_aux(std::shared_ptr<TreeNode>& root, const int level_id);
         static void remove_level_and_fix_hist_aux(std::shared_ptr<TreeNode>& root, const int level_id, int* hist);
+        static void update_zero_path(std::shared_ptr<TreeNode>& root);
 
         static void inorderToList(const std::shared_ptr<TreeNode>& root, Array<std::shared_ptr<TreeNode>>& list);
         Array<std::shared_ptr<TreeNode>> getTreeAsList() const;
@@ -102,12 +103,11 @@ class RankTree {
         std::shared_ptr<TreeNode> root;
         int number_of_levels = 1;  // starts with level 0
         std::shared_ptr<TreeNode> level_zero;
-        // TreeNode level_zero;
         int scale;
 
         RankTree(int scale);
 
-        const std::shared_ptr<TreeNode>& find(const int level_id) const;
+        const std::shared_ptr<TreeNode>& findLevel(const int level_id) const;
         void insert(std::shared_ptr<Player>& player);
         void removePlayer(std::shared_ptr<Player>& player);
         static RankTree merge(const RankTree& rt1, const RankTree& rt2);
