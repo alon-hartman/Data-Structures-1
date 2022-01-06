@@ -104,6 +104,7 @@ class RankTree {
         static int findLowerBound(std::shared_ptr<TreeNode>& root, const int level_id);
         static void RankAndScoreRankAux(std::shared_ptr<TreeNode>& root, const int bound, const int score, int* const sum_players, int* const sum_score);
         static int getSubtreeAtScore(std::shared_ptr<TreeNode>& root, const int score);
+        void update_zero_path(std::shared_ptr<TreeNode&>& root);
 
         int scale;
 

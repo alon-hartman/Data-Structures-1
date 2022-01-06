@@ -65,6 +65,22 @@ int RankTree::getPlayersInSubtree(std::shared_ptr<TreeNode>& root) {
     }
     return root->players_in_subtree;
 }
+void RankTree::update_zero_path(std::shared_ptr<TreeNode&>& root){
+    if(root->level_id == 0){
+        return;
+    }
+    decrease_counts(root,root->left);
+    root->players_in_subtree -= root->left.getPlayersInSubtree();
+    update_zero_path(root->left);
+    if(root->left->level_id == 0){
+        root->players_in_subtree = root->left.getPlayersInSubtree() + root->right.getPlayersInSubtree()
+                                    + root->players_in_level.number_of_players
+    } else {
+        root->players_in_subtree += root->left.getPlayersInSubtree();
+    }
+    increase_counts(root,root->left);
+    recalculate_average(root);
+}
 
 void RankTree::recalculate_average(std::shared_ptr<TreeNode>& root) {
     if(!root) {
@@ -522,6 +538,10 @@ const std::shared_ptr<TreeNode>& RankTree::find(const int level_id) const {
     return find_aux(root, level_id);
 }
 void RankTree::insert(std::shared_ptr<Player>& player) {
+    if(player->level == 0){
+        insert_player_aux(level_zero,0,player);
+        return;
+    }
     if(!find(player->level)) {
         insert_level_aux(root, player->level, player, root->scale);
         number_of_levels++;
