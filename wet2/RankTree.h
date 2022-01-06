@@ -70,6 +70,7 @@ class RankTree {
         static void increase_counts(int* A, int* B, int scale);
         static double sumOfLevelsInSubtree(std::shared_ptr<TreeNode>& root);
         static int getPlayersInSubtree(std::shared_ptr<TreeNode>& root);
+        static double getAverageLevelInSubtree(std::shared_ptr<TreeNode>& root);
         static void recalculate_average(std::shared_ptr<TreeNode>& root);
         static void RR_rotation(std::shared_ptr<TreeNode>& parent);
         static void RL_rotation(std::shared_ptr<TreeNode>& parent);
@@ -99,6 +100,8 @@ class RankTree {
         static void RankAndScoreRankAux(std::shared_ptr<TreeNode>& root, const int bound, const int score, int* const sum_players, int* const sum_score);
         static int getSubtreeAtScore(std::shared_ptr<TreeNode>& root, const int score);
 
+        static double averageHighestPlayerLevelByGroupAux(std::shared_ptr<TreeNode>& root, int m);
+
     public:
         std::shared_ptr<TreeNode> root;
         int number_of_levels = 1;  // starts with level 0
@@ -112,6 +115,7 @@ class RankTree {
         void removePlayer(std::shared_ptr<Player>& player);
         static RankTree merge(const RankTree& rt1, const RankTree& rt2);
         double getPercentOfPlayersWithScoreInBounds(const int lower, const int upper, const int score);
+        double averageHighestPlayerLevelByGroup(int m);
 };
 
 #endif

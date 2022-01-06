@@ -1,5 +1,6 @@
 #include "RankTree.h"
 #include "Array.h"
+#include <cassert>
 
 /********************************** MERGE FUNCTIONS **********************************/
 
@@ -66,6 +67,13 @@ int RankTree::getPlayersInSubtree(std::shared_ptr<TreeNode>& root) {
         return 0;
     }
     return root->players_in_subtree;
+}
+
+double RankTree::getAverageLevelInSubtree(std::shared_ptr<TreeNode>& root) {
+    if(!root) {
+        return 0;
+    }
+    return root->average_level_in_subtree;
 }
 
 void RankTree::recalculate_average(std::shared_ptr<TreeNode>& root) {
@@ -522,8 +530,50 @@ double RankTree::getPercentOfPlayersWithScoreInBounds(const int lower, const int
         rank_score_lower -= getSubtreeAtScore(level, score) - getSubtreeAtScore(level->left, score) - getSubtreeAtScore(level->right, score);
     }
     return double(rank_score_upper - rank_score_lower) / (rank_upper - rank_lower);
-
 }
+
+/********************************** AVERAGE HIGHEST FUNCTIONS **********************************/
+double RankTree::averageHighestPlayerLevelByGroupAux(std::shared_ptr<TreeNode>& root, int m) {
+    if(!root) {
+        return 0;
+    }
+    else if(root->players_in_subtree == m) {
+        return root->average_level_in_subtree;
+    }
+    // if(getPlayersInSubtree(root->right) == m) {
+    //     return root->right->average_level_in_subtree;
+    // }
+    if(getPlayersInSubtree(root->right) >= m) {
+        return averageHighestPlayerLevelByGroupAux(root->right, m);
+    }
+    else {
+        // int players_in_right_subtree = getPlayersInSubtree(root->right);
+        int remaining = m - getPlayersInSubtree(root->right);
+        if(!root->right && root->players_in_level.number_of_players >= m) {
+            return root->level_id;
+        }
+        else if(!root->right || remaining > root->players_in_level.number_of_players) {
+            // must borrow from left subtree
+            int m1 = getPlayersInSubtree(root) - getPlayersInSubtree(root->left);
+            int m2 = remaining - root->players_in_level.number_of_players;
+            assert(m1+m2 == m);
+            double sum_levels_r = double(getAverageLevelInSubtree(root->right) * getPlayersInSubtree(root->right) +
+                                  root->players_in_level.number_of_players * root->level_id);
+            double average_l = averageHighestPlayerLevelByGroupAux(root->left, m2);
+            return (sum_levels_r + (average_l * m2)) / m;
+        }
+        else {
+            // can complete to m with players in root
+            return double(getAverageLevelInSubtree(root->right) * getPlayersInSubtree(root->right) + remaining * root->level_id) / m;
+        }
+    }
+}
+
+double RankTree::averageHighestPlayerLevelByGroup(int m) {
+    update_zero_path(root);
+    return averageHighestPlayerLevelByGroupAux(root, m);
+}
+
 /************************************** PUBLIC MEMBER FUNCTUINS **************************************/
 
 // RankTree::RankTree(int scale) : scale(scale), root(std::make_shared<TreeNode>(scale, 0)), number_of_levels(1), level_zero(root) { }
