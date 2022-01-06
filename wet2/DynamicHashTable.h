@@ -107,6 +107,7 @@ class DHT {
             this->players = other.players;
             this->size = other.size;
             this->number_of_players = other.number_of_players;
+            return *this;
         }
 
         void swap(DHT& other) {
@@ -173,19 +174,20 @@ class DHT {
             size = new_size;
         }
 
-         static DHT* merge(DHT& dht1, DHT& dht2) {
-             DHT* merged = new DHT(dht1.size + dht2.size);
+         static DHT merge(const DHT& dht1, const DHT& dht2) {
+            //  DHT* merged = new DHT(dht1.size + dht2.size);
+             DHT merged(dht1.size + dht2.size);
              for(int i=0; i<dht1.size; ++i) {
                 Node* iterator = dht1.players[i].head;
                 while(iterator) {
-                    merged->addPlayer(iterator->data);
+                    merged.addPlayer(iterator->data);
                     iterator = iterator->next;
                 }
              }
              for(int i=0; i<dht2.size; ++i) {
                 Node* iterator = dht2.players[i].head;
                 while(iterator) {
-                    merged->addPlayer(iterator->data);
+                    merged.addPlayer(iterator->data);
                     iterator = iterator->next;
                 }
              }
