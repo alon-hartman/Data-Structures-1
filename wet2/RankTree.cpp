@@ -355,10 +355,10 @@ std::shared_ptr<TreeNode> RankTree::getTreeFromListAux(const Array<std::shared_p
     return root;
 }
 
-RankTree RankTree::getTreeFromList(const Array<std::shared_ptr<TreeNode>>& list, int scale) {
-    RankTree rt(scale);
-    rt.root = getTreeFromListAux(list, 0, list.getSize());
-    rt.number_of_levels = list.getSize()+1;
+RankTree* RankTree::getTreeFromList(const Array<std::shared_ptr<TreeNode>>& list, int scale) {
+    RankTree* rt = new RankTree(scale);
+    rt->root = getTreeFromListAux(list, 0, list.getSize());
+    rt->number_of_levels = list.getSize()+1;
     return rt;
 }
 
@@ -398,8 +398,8 @@ Array<std::shared_ptr<TreeNode>> RankTree::removeDuplicates(const Array<std::sha
     return new_list;
 }
 
-void RankTree::resetHistogram(int* histogram) {  // O(1)
-    for (int i = 0; i < MAX_SCORE; i++) {
+void RankTree::resetHistogram(int* histogram, int scale) {  // O(1)
+    for (int i = 0; i < scale; i++) {
         histogram[i] = 0;
     }
 }
@@ -410,7 +410,7 @@ void RankTree::updateMergedTree(std::shared_ptr<TreeNode>& root) {
     }
     updateMergedTree(root->left);
     updateMergedTree(root->right);
-    resetHistogram(root->scores_hist);
+    resetHistogram(root->scores_hist, root->scale);
     for (int i = 0; i < root->players_in_level.getSize(); i++) {
         Node* iterator = root->players_in_level.getPlayer(i);   
         while(iterator) {
@@ -423,15 +423,15 @@ void RankTree::updateMergedTree(std::shared_ptr<TreeNode>& root) {
     recalculate_average(root);
 }
 
-RankTree RankTree::listToRankTree(const Array<std::shared_ptr<TreeNode>>& list, int scale) {
-    RankTree avl = getTreeFromList(list, scale);  // O(n+m)
-    return avl;
+RankTree* RankTree::listToRankTree(const Array<std::shared_ptr<TreeNode>>& list, int scale) {
+    RankTree* rt = getTreeFromList(list, scale);  // O(n+m)
+    return rt;
     // counting copying and destructing lists and trees (if performed), the overall complexity is still O(n+m)
 }
-RankTree RankTree::merge(const RankTree& rt1, const RankTree& rt2) {
+RankTree* RankTree::merge(const RankTree& rt1, const RankTree& rt2) {
     Array<std::shared_ptr<TreeNode>> merged_list = mergeToList(rt1, rt2);
-    RankTree res = listToRankTree(merged_list, rt1.scale);
-    updateMergedTree(res.root);
+    RankTree* res = listToRankTree(merged_list, rt1.scale);
+    updateMergedTree(res->root);
     return res;
 }
 /********************************** RANK FUNCTIONS **********************************/

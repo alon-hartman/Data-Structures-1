@@ -93,7 +93,7 @@ class DHT {
     public:
         int size;
         int number_of_players;
-        DHT(int size=2) : size(size), number_of_players(0), players(new LinkedList[size]) { }
+        DHT(int size=2) : players(new LinkedList[size]), size(size), number_of_players(0) { }
 
         ~DHT() {
             delete[] players;
@@ -108,19 +108,6 @@ class DHT {
             this->size = other.size;
             this->number_of_players = other.number_of_players;
             return *this;
-        }
-
-        void swap(DHT& other) {
-            LinkedList* temp = players;
-            players = other.players;
-            other.players = temp;
-            int _temp = size;
-            size = other.size;
-            other.size = _temp;
-            _temp = number_of_players;
-            number_of_players = other.number_of_players;
-            other.number_of_players = _temp;
-
         }
 
         int getSize() {
