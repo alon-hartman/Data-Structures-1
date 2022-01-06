@@ -1,6 +1,8 @@
 #include "RankTree.h"
 #include "Array.h"
 
+/********************************** MERGE FUNCTIONS **********************************/
+
 int RankTree::max(const int a, const int b) {
     return (a > b) ? a : b;
 }
@@ -417,7 +419,7 @@ RankTree RankTree::merge(const RankTree& rt1, const RankTree& rt2) {
     return res;
 }
 
-/********************************** RANK FUNCTUINS **********************************/
+/********************************** RANK FUNCTIONS **********************************/
 int RankTree::findUpperBound(std::shared_ptr<TreeNode>& root, const int level_id) {
     if(!root) {
         return level_id+1;
@@ -517,6 +519,7 @@ double RankTree::getPercentOfPlayersWithScoreInBounds(const int lower, const int
 /************************************** PUBLIC MEMBER FUNCTUINS **************************************/
 
 RankTree::RankTree(int scale) : scale(scale), root(std::make_shared<TreeNode>(scale, 0)), number_of_levels(1), level_zero(root) { }
+// RankTree::RankTree(int scale) : scale(scale), root(std::make_shared<TreeNode>(scale, 0)), number_of_levels(1), level_zero(scale, 0) { }
 
 const std::shared_ptr<TreeNode>& RankTree::find(const int level_id) const {
     return find_aux(root, level_id);

@@ -7,6 +7,13 @@
 
 const int MAX_SCORE = 200;
 
+template<typename T>
+void swap(T& a, T& b) {
+    T temp = a;
+    a = b;
+    b = temp;
+}
+
 struct TreeNode {
     int level_id;
     int height = 0;
@@ -27,43 +34,29 @@ struct TreeNode {
         right = nullptr;
     }
     void swap_data(TreeNode& other) {
-        // could implement a generic swap but
-        int temp = level_id;
-        level_id = other.level_id;
-        other.level_id = temp;
-
-        temp = height;
-        height = other.height;
-        other.height = temp;
-
+        swap<int>(level_id, other.level_id);
+        swap<int>(height, other.height);
         players_in_level.swap(other.players_in_level);
-        int* _temp = scores_hist;
-        scores_hist = other.scores_hist;
-        other.scores_hist = _temp;
-
-        temp = players_in_subtree;
-        players_in_subtree = other.players_in_subtree;
-        other.players_in_subtree = temp;
-
-        temp = average_level_in_subtree;
-        average_level_in_subtree = other.average_level_in_subtree;
-        other.average_level_in_subtree = temp;
+        swap<int*>(scores_hist, other.scores_hist);
+        swap<int>(players_in_subtree, other.players_in_subtree);
+        swap<double>(average_level_in_subtree, other.average_level_in_subtree);
+        swap<int>(scale, other.scale);
     }
-    TreeNode& operator=(const TreeNode& other) {
-        if(this == &other) {
-            return *this;
-        }
-        this->level_id = other.level_id;
-        this->height = other.height;
-        this->players_in_level = other.players_in_level;
-        delete[] this->scores_hist;
-        this->scores_hist = other.scores_hist;
-        this->players_in_subtree = other.players_in_subtree;
-        this->average_level_in_subtree = other.average_level_in_subtree;
-        this->left = other.left;
-        this->right = other.right;
-        return *this;
-    }
+    // TreeNode& operator=(const TreeNode& other) {
+    //     if(this == &other) {
+    //         return *this;
+    //     }
+    //     this->level_id = other.level_id;
+    //     this->height = other.height;
+    //     this->players_in_level = other.players_in_level;
+    //     delete[] this->scores_hist;
+    //     this->scores_hist = other.scores_hist;
+    //     this->players_in_subtree = other.players_in_subtree;
+    //     this->average_level_in_subtree = other.average_level_in_subtree;
+    //     this->left = other.left;
+    //     this->right = other.right;
+    //     return *this;
+    // }
 };
 
 class RankTree {
@@ -105,13 +98,12 @@ class RankTree {
         static void RankAndScoreRankAux(std::shared_ptr<TreeNode>& root, const int bound, const int score, int* const sum_players, int* const sum_score);
         static int getSubtreeAtScore(std::shared_ptr<TreeNode>& root, const int score);
 
-        int scale;
-
-        
     public:
         std::shared_ptr<TreeNode> root;
-        int number_of_levels = 1;
+        int number_of_levels = 1;  // starts with level 0
         std::shared_ptr<TreeNode> level_zero;
+        // TreeNode level_zero;
+        int scale;
 
         RankTree(int scale);
 
