@@ -99,15 +99,6 @@ PMStatusType PlayersManager::changePlayerIDScore(int PlayerID, int NewScore) {
         groups.groups[root].rt->change_player_score(player->level, player->score, NewScore);
 
         player->score = NewScore;
-
-        // all_players_tree.removePlayer(player);  // O(1) if level = 0, O(logn) otherwise
-        // int root = groups.Find(player->groupID-1);  // O(log*k) amortized with Union
-        // groups.groups[root].rt->removePlayer(player);  // O(1) if level = 0, O(logn) otherwise
-        // groups.groups[root].number_of_players--;
-        // player->score = NewScore;
-        // all_players_tree.insert(player);  // O(1) if level = 0, O(logn) otherwise
-        // groups.groups[root].rt->insert(player);  // O(1) if level = 0, O(logn) otherwise
-        // groups.groups[root].number_of_players++;
     }
     catch(std::bad_alloc&) {
         return PM_ALLOCATION_ERROR;
@@ -145,7 +136,6 @@ PMStatusType PlayersManager::averageHighestPlayerLevelByGroup(int GroupID, int m
             return PM_INVALID_INPUT;
         }
         if(GroupID == 0) {
-            RankTree::update_zero_path(all_players_tree.root);
             if(m > all_players_tree.getPlayersInTree()) {  // O(logn)
                 return PM_FAILURE;
             }
