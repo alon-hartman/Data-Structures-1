@@ -36,8 +36,8 @@ struct TreeNode {
     void swap_data(TreeNode& other) {
         swap<int>(level_id, other.level_id);
         swap<int>(height, other.height);
-        // players_in_level.swap(other.players_in_level);
-        swap<DHT>(players_in_level, other.players_in_level);
+        players_in_level.swap(other.players_in_level);
+        // swap<DHT>(players_in_level, other.players_in_level);
         swap<int*>(scores_hist, other.scores_hist);
         swap<int>(players_in_subtree, other.players_in_subtree);
         swap<double>(average_level_in_subtree, other.average_level_in_subtree);
@@ -84,7 +84,7 @@ class RankTree {
         static void remove_player_aux(std::shared_ptr<TreeNode>& root, std::shared_ptr<Player>& player);
         static void remove_level_aux(std::shared_ptr<TreeNode>& root, const int level_id);
         static void remove_level_and_fix_hist_aux(std::shared_ptr<TreeNode>& root, const int level_id, int* hist);
-        static void update_zero_path(std::shared_ptr<TreeNode>& root);
+        // static void update_zero_path(std::shared_ptr<TreeNode>& root);
 
         static void inorderToList(const std::shared_ptr<TreeNode>& root, Array<std::shared_ptr<TreeNode>>& list);
         Array<std::shared_ptr<TreeNode>> getTreeAsList() const;
@@ -103,6 +103,9 @@ class RankTree {
 
         static double averageHighestPlayerLevelByGroupAux(std::shared_ptr<TreeNode>& root, int m);
 
+
+        static void change_player_score_aux(std::shared_ptr<TreeNode>& root, const int level, const int old_score, const int new_score);
+
     public:
         int scale;
         std::shared_ptr<TreeNode> root;
@@ -111,12 +114,17 @@ class RankTree {
 
         RankTree(int scale);
 
+        int getPlayersInTree();
+        static void update_zero_path(std::shared_ptr<TreeNode>& root);
+
         const std::shared_ptr<TreeNode>& findLevel(const int level_id) const;
         void insert(std::shared_ptr<Player>& player);
         void removePlayer(std::shared_ptr<Player>& player);
         static RankTree* merge(const RankTree& rt1, const RankTree& rt2);
         double getPercentOfPlayersWithScoreInBounds(const int lower, const int upper, const int score);
         double averageHighestPlayerLevelByGroup(int m);
+
+        void change_player_score(const int level, const int old_score, const int new_score);
 };
 
 #endif

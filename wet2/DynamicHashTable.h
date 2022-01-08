@@ -4,6 +4,7 @@
 #include "Player.h"
 #include <memory>
 #include <exception>
+#include <cassert>
 
 
 class PlayerDoesntExists : public std::exception {
@@ -22,57 +23,62 @@ class PlayerAlreadyExists : public std::exception {
 
 struct Node {
     std::shared_ptr<Player> data;
-    Node* next;
+    std::shared_ptr<Node> next;
     Node() : data(nullptr), next(nullptr) { };
-    Node(std::shared_ptr<Player> player, Node* next) : data(player), next(next) { }
+    Node(const std::shared_ptr<Player>& player, std::shared_ptr<Node> next) : data(player), next(next) { }
     ~Node() {
         data = nullptr;
-        while(next) {
-            delete next;
-        }
+        // delete next;
+        next = nullptr;
     }
 };
 
 // struct for simplicity
 struct LinkedList {
     int size;
-    Node* head;
+    std::shared_ptr<Node> head;
     LinkedList() : size(0), head(nullptr) { };
     ~LinkedList() {
-        delete head;
+        // delete head;
+        head = nullptr;
     }
-    void insert(std::shared_ptr<Player> player) {
-        Node* new_node = new Node(player, head);
+    void insert(const std::shared_ptr<Player>& player) {
+        // Node* new_node = new Node(player, head);
+        std::shared_ptr<Node> new_node = std::make_shared<Node>(player, head);
         head = new_node;
         size++;
     }
-    void remove(std::shared_ptr<Player> player) {
+    void remove(std::shared_ptr<Player>& player) {
         if(head == nullptr) {
             throw PlayerDoesntExists();
-        };
+        }
         if(player->playerID == head->data->playerID) {
             // remove from top of list
-            Node* garbage = head;
+            // Node* garbage = head;
+            std::shared_ptr<Node> garbage = head;
             head = head->next;
-            delete garbage;
+            garbage->next = nullptr;
+            // delete garbage;
+            garbage = nullptr;
             size--;
             return;
         }
-        Node* temp = head;
+        std::shared_ptr<Node> temp = head;
         while(temp->next != nullptr && temp->next->data->playerID != player->playerID) {
             temp = temp->next;
         }
-        Node* garbage = temp->next;
+        std::shared_ptr<Node> garbage = temp->next;
         if(garbage == nullptr) {
             throw PlayerDoesntExists();
         };
         temp->next = garbage->next;
-        delete garbage;
+        // delete garbage;
+        // garbage = nullptr;
         size--;
     }
     std::shared_ptr<Player> findPlayer(int PlayerID)
     {
-        Node* iterator = head;
+        std::shared_ptr<Node> iterator = head;
         while(iterator != nullptr && iterator->data->playerID != PlayerID) {
             iterator = iterator->next;
         }
@@ -88,7 +94,7 @@ class DHT {
         LinkedList* players;
         
         int hashFunction(int i, int m) {
-            return (i>=0 ) ? i % m : m + i%m;
+            return (i >=0 ) ? i % m : m + i%m;
         }
     public:
         int size;
@@ -114,7 +120,20 @@ class DHT {
             return size;
         }
 
-        Node* getPlayer(int i) {
+        void swap(DHT& other) {
+            LinkedList* temp = players;
+            players = other.players;
+            other.players = temp;
+            int _temp = size;
+            size = other.size;
+            other.size = _temp;
+            _temp = number_of_players;
+            number_of_players = other.number_of_players;
+            other.number_of_players = _temp;
+
+        }
+
+        std::shared_ptr<Node> getPlayer(int i) {
             if(i<size && i>=0) {
                 return players[i].head;
             }
@@ -122,8 +141,7 @@ class DHT {
         }
 
         void addPlayer(const std::shared_ptr<Player>& player) {
-            if(findPlayer(player->playerID) != nullptr)
-            {
+            if(findPlayer(player->playerID) != nullptr) {
                 throw PlayerAlreadyExists();
             }
             players[hashFunction(player->playerID, size)].insert(player);
@@ -136,7 +154,8 @@ class DHT {
         void removePlayer(std::shared_ptr<Player> player) {
             players[hashFunction(player->playerID, size)].remove(player);
             number_of_players--;
-            if(number_of_players < size/4) {
+            if(number_of_players < size/4 && size > 2) {
+                assert(size/2 >= 2);
                 resize(size/2);
             }
         }
@@ -149,7 +168,7 @@ class DHT {
         void resize(int new_size) {
             LinkedList* new_players = new LinkedList[new_size];
             for(int i=0; i<size; ++i) {
-                Node* iterator = players[i].head;
+                std::shared_ptr<Node> iterator = players[i].head;
                 while(iterator != nullptr) {
                     new_players[hashFunction(iterator->data->playerID, new_size)].insert(iterator->data);
                     iterator = iterator->next;
@@ -165,14 +184,14 @@ class DHT {
             //  DHT* merged = new DHT(dht1.size + dht2.size);
              DHT merged(dht1.size + dht2.size);
              for(int i=0; i<dht1.size; ++i) {
-                Node* iterator = dht1.players[i].head;
+                std::shared_ptr<Node> iterator = dht1.players[i].head;
                 while(iterator) {
                     merged.addPlayer(iterator->data);
                     iterator = iterator->next;
                 }
              }
              for(int i=0; i<dht2.size; ++i) {
-                Node* iterator = dht2.players[i].head;
+                std::shared_ptr<Node> iterator = dht2.players[i].head;
                 while(iterator) {
                     merged.addPlayer(iterator->data);
                     iterator = iterator->next;
@@ -183,7 +202,7 @@ class DHT {
 
          void merge(DHT& other) {
              for(int i=0; i<other.size; ++i) {
-                 Node* iterator = other.players[i].head;
+                 std::shared_ptr<Node> iterator = other.players[i].head;
                  while(iterator) {
                     this->addPlayer(iterator->data);
                     iterator = iterator->next;
