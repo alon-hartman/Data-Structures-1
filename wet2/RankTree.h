@@ -28,7 +28,7 @@ struct TreeNode {
     
     TreeNode(int scale, int level) : 
         level_id(level), height(0), players_in_level(0), scale(scale), average_level_in_subtree(0),
-        scores_hist(new int[scale]{0}), self_scores_hist(new int[scale]{0}), players_in_subtree(0), left(nullptr), right(nullptr) { }
+        scores_hist(new int[MAX_SCORE]{0}), self_scores_hist(new int[MAX_SCORE]{0}), players_in_subtree(0), left(nullptr), right(nullptr) { }
     ~TreeNode() {
         delete[] scores_hist;
         delete[] self_scores_hist;
