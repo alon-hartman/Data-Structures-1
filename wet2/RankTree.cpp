@@ -654,6 +654,5 @@ int RankTree::getPlayersInTree() {
 }
 
 void RankTree::change_player_score(const int level, const int old_score, const int new_score) {
-    update_zero_path(root);
     change_player_score_aux(root, level, old_score, new_score);
 }
