@@ -154,3 +154,23 @@ PMStatusType PlayersManager::averageHighestPlayerLevelByGroup(int GroupID, int m
     }
     return PM_SUCCESS;
 }
+
+PMStatusType PlayersManager::getPlayersBound(int GroupID, int score, int m, int * LowerBoundPlayers, int * HigherBoundPlayers) {
+    if(!LowerBoundPlayers || !HigherBoundPlayers || GroupID > groups.Size() || GroupID < 0 || m < 0 || score <= 0 || score > scale) {
+        return PM_INVALID_INPUT;
+    }
+    if(GroupID == 0) {
+        if(m > all_players_tree.getPlayersInTree()) {  // O(logn)
+            return PM_FAILURE;
+        }
+        all_players_tree.getPlayersBounds(score, m, LowerBoundPlayers, HigherBoundPlayers);
+    }
+    else {
+        int root = groups.Find(GroupID-1);
+        if(m > groups.groups[root].rt->getPlayersInTree()) {  // O(logn)
+            return PM_FAILURE;
+        }
+        groups.groups[root].rt->getPlayersBounds(score, m, LowerBoundPlayers, HigherBoundPlayers);
+    }
+    return PM_SUCCESS;
+}

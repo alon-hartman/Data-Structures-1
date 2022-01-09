@@ -8,6 +8,10 @@ int RankTree::max(const int a, const int b) {
     return (a > b) ? a : b;
 }
 
+int RankTree::min(const int a, const int b) {
+    return (a < b) ? a : b;
+}
+
 int RankTree::height(const std::shared_ptr<TreeNode>& root) {
     if(!root) {
         return -1;
@@ -573,6 +577,42 @@ double RankTree::averageHighestPlayerLevelByGroup(int m) {
     return averageHighestPlayerLevelByGroupAux(root, m);
 }
 
+/********************************** AVERAGE HIGHEST FUNCTIONS **********************************/
+
+void RankTree::getPlayersBoundsAux(std::shared_ptr<TreeNode>& root, int score, int m, int* lower, int* upper) {
+    if(!root) {
+        return;
+    }
+    if(getPlayersInSubtree(root->right) >= m) {
+        return getPlayersBoundsAux(root->right, score, m, lower, upper);
+    }
+    else {
+        int remaining = m - getPlayersInSubtree(root->right);
+        if(root->players_in_level >= remaining) {
+            *lower += max(0, remaining - (root->players_in_level - root->self_scores_hist[score]));
+            *upper += min(remaining, root->self_scores_hist[score]);
+            if(root->right) {
+                *lower += root->right->scores_hist[score];
+                *upper += root->right->scores_hist[score];
+            }
+        }
+        else if(remaining > root->players_in_level) {
+            int m2 = remaining - root->players_in_level;
+            *lower += root->scores_hist[score];
+            *upper += root->scores_hist[score];
+            if(root->left) {
+                *lower -= root->left->scores_hist[score];
+                *upper -= root->left->scores_hist[score];
+            }
+            getPlayersBoundsAux(root->left, score, m2, lower, upper);
+        }
+    }
+}
+
+void RankTree::getPlayersBounds(int score, int m, int* lower, int* upper) {
+    getPlayersBoundsAux(root, score, m, lower, upper);
+}
+
 /************************************** PUBLIC MEMBER FUNCTUINS **************************************/
 
 RankTree::RankTree(int scale) : scale(scale), root(std::make_shared<TreeNode>(scale, 0)), number_of_levels(1), level_zero(root) { }
@@ -586,8 +626,8 @@ void RankTree::insert(std::shared_ptr<Player>& player) {
         insert_player_aux(level_zero, 0, player);
         return;
     }
-        update_zero_path(root);
     if(!findLevel(player->level)) {
+        update_zero_path(root);
         insert_level_aux(root, player->level, player, root->scale);
         number_of_levels++;
         return;
@@ -600,9 +640,9 @@ void RankTree::removePlayer(std::shared_ptr<Player>& player) {
     if(!node) {
         return;
     }
-    update_zero_path(root);
     remove_player_aux(root, player);  // O(logn)
     if(node->players_in_level == 0 && node->level_id != 0) {
+        update_zero_path(root);
         remove_level_aux(root, player->level);  // O(logn)
         number_of_levels--;
     }

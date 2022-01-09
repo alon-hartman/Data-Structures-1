@@ -27,7 +27,7 @@ struct TreeNode {
     std::shared_ptr<TreeNode> right;
     
     TreeNode(int scale, int level) : 
-        level_id(level), height(0), players_in_level(0), /*players_in_level(),*/ scale(scale), average_level_in_subtree(0),
+        level_id(level), height(0), players_in_level(0), scale(scale), average_level_in_subtree(0),
         scores_hist(new int[scale]{0}), self_scores_hist(new int[scale]{0}), players_in_subtree(0), left(nullptr), right(nullptr) { }
     ~TreeNode() {
         delete[] scores_hist;
@@ -50,6 +50,7 @@ struct TreeNode {
 class RankTree {
     private:
         static int max(const int a, const int b);
+        static int min(const int a, const int b);
         static int height(const std::shared_ptr<TreeNode>& root);
         static int get_balance_factor(const std::shared_ptr<TreeNode>& root);
         static void decrease_counts(const std::shared_ptr<TreeNode>& A, const std::shared_ptr<TreeNode>& B);
@@ -92,6 +93,8 @@ class RankTree {
 
         static void change_player_score_aux(std::shared_ptr<TreeNode>& root, const int level, const int old_score, const int new_score);
 
+        static void getPlayersBoundsAux(std::shared_ptr<TreeNode>& root, int score, int m, int* lower, int* higher);
+
     public:
         int scale;
         std::shared_ptr<TreeNode> root;
@@ -111,6 +114,8 @@ class RankTree {
         double averageHighestPlayerLevelByGroup(int m);
 
         void change_player_score(const int level, const int old_score, const int new_score);
+
+        void getPlayersBounds(int score, int m, int* lower, int* higher);
 };
 
 #endif
