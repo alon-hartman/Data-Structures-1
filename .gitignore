@@ -30,3 +30,14 @@
 *.exe
 *.out
 *.app
+
+# cmake Files
+wet2/build/*
+build/*
+
+# json Files
+*.json
+
+wet2 - Copy/*
+wet2/tests_0/*
+wet2/tests_1/*
