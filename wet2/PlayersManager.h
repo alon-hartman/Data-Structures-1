@@ -28,7 +28,7 @@ class PlayersManager {
         PMStatusType changePlayerIDScore(int PlayerID, int NewScore);
         PMStatusType getPercentOfPlayersWithScoreInBounds(int GroupID, int score, int lowerlevel, int higherlevel, double* players);
         PMStatusType averageHighestPlayerLevelByGroup(int GroupID, int m, double* avgLevel);
-        // PMStatusType getPlayersBound(int GroupID, int score, int m, int * LowerBoundPlayers, int * HigherBoundPlayers);
+        PMStatusType getPlayersBound(int GroupID, int score, int m, int * LowerBoundPlayers, int * HigherBoundPlayers);
         // ~PlayersManager();
         
 
