@@ -122,6 +122,10 @@ PMStatusType PlayersManager::getPercentOfPlayersWithScoreInBounds(int GroupID, i
         if(res == -1) {  // no players in lowerlevel, upperlevel
             return PM_FAILURE;
         }
+        if(score < 0 || score > scale) {
+            *players = 0;
+            return PM_SUCCESS;
+        }
         *players = res;
     }
     catch(std::bad_alloc&) {

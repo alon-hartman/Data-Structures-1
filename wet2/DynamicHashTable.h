@@ -4,7 +4,6 @@
 #include "Player.h"
 #include <memory>
 #include <exception>
-#include <cassert>
 
 
 class PlayerDoesntExists : public std::exception {
@@ -155,7 +154,6 @@ class DHT {
             players[hashFunction(player->playerID, size)].remove(player);
             number_of_players--;
             if(number_of_players < size/4 && size > 2) {
-                assert(size/2 >= 2);
                 resize(size/2);
             }
         }

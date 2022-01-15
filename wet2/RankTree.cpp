@@ -1,6 +1,5 @@
 #include "RankTree.h"
 #include "Array.h"
-#include <cassert>
 
 /********************************** HELPER FUNCTIONS **********************************/
 
